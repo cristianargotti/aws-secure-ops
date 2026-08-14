@@ -1,0 +1,25 @@
+{
+  "name": "secure-ops",
+  "owner": {
+    "name": "Cristian Reyes"
+  },
+  "description": "Universal secure-operations tooling for the AWS CLI.",
+  "plugins": [
+    {
+      "name": "aws-secure-ops",
+      "source": "./plugins/aws-secure-ops",
+      "description": "A secure-by-default protocol and pre-execution seatbelt for every AWS CLI command: identity gate, least-privilege profiles, purpose stamping, staged mutations, professional tagging, and an evasion-hardened enforcement hook.",
+      "version": "2.0.0",
+      "license": "MIT",
+      "keywords": [
+        "aws",
+        "security",
+        "cli",
+        "guardrails",
+        "cloudtrail",
+        "least-privilege"
+      ],
+      "category": "security"
+    }
+  ]
+}

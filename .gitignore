@@ -1,0 +1,15 @@
+# Build artifacts
+*.skill
+__pycache__/
+*.pyc
+*.pyo
+
+# OS / editor cruft
+.DS_Store
+*.bak
+*.swp
+
+# Never commit an operator's private policy, even if dropped here by mistake
+aws-ops.policy.json
+aws-ops-ledger.jsonl
+aws-ops-ledger-*.jsonl

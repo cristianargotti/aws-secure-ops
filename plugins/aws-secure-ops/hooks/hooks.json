@@ -1,0 +1,29 @@
+{
+  "hooks": {
+    "PreToolUse": [
+      {
+        "matcher": "Bash",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python3 \"${CLAUDE_PLUGIN_ROOT}/skills/aws-secure-ops/scripts/classify-aws-command.py\"",
+            "timeout": 15,
+            "statusMessage": "aws-secure-ops gate"
+          }
+        ]
+      }
+    ],
+    "SessionStart": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python3 \"${CLAUDE_PLUGIN_ROOT}/skills/aws-secure-ops/scripts/aws-ops-doctor.py\" --quick --session",
+            "timeout": 15,
+            "statusMessage": "aws-secure-ops watchdog"
+          }
+        ]
+      }
+    ]
+  }
+}

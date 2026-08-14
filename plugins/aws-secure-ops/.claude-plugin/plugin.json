@@ -1,0 +1,17 @@
+{
+  "name": "aws-secure-ops",
+  "description": "A secure-by-default protocol and pre-execution seatbelt for every AWS CLI command. Bundles the aws-secure-ops skill, an evasion-hardened PreToolUse gate, and a SessionStart health watchdog.",
+  "version": "2.0.0",
+  "author": {
+    "name": "Cristian Reyes"
+  },
+  "license": "MIT",
+  "keywords": [
+    "aws",
+    "security",
+    "cli",
+    "guardrails",
+    "cloudtrail",
+    "least-privilege"
+  ]
+}
