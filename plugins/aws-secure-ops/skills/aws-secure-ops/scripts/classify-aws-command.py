@@ -516,6 +516,34 @@ def parse_invocation(tokens, start):
     return service, op, profile, stamp
 
 
+# A resource-NAME flag the operator uses to name something they create:
+# --name, --stack-name, --function-name, --role-name, --bucket, ... Deliberately
+# limited to --name / *-name / --bucket so a marker in a name the operator is
+# ASSIGNING is caught (hard prohibition #7) without scanning every id-like flag.
+NAME_FLAG = re.compile(r"^--(?:name|bucket|[a-z][a-z0-9-]*-name)$")
+
+
+def name_flag_values(tokens, start):
+    """Values of resource-name flags on the invocation beginning at tokens[start]
+    (--flag=value and --flag value both handled), so a tool/automation marker in
+    a name is caught like one in a tag value."""
+    vals = []
+    i = start + 1
+    while i < len(tokens):
+        t = tokens[i]
+        if t in ("&&", "||", ";", "|"):
+            break
+        if t.startswith("--"):
+            flag, sep, inline = t.partition("=")
+            if NAME_FLAG.match(flag):
+                if sep:
+                    vals.append(inline)
+                elif i + 1 < len(tokens) and not tokens[i + 1].startswith("-"):
+                    vals.append(tokens[i + 1])
+        i += 1
+    return vals
+
+
 def tokenize(segment):
     try:
         import shlex
@@ -768,14 +796,6 @@ def main():
     any_sensitive = False
     reasons_ask = []
 
-    loop_head = re.compile(r"(^|[;&|]\s*|\$\(\s*|`\s*)\s*(for|while|until)\s")
-    has_loop = (
-        bool(loop_head.search(cmd))
-        or bool(re.search(r"\bxargs\b[^;|&]*\baws\b", cmd))
-        or bool(re.search(r"-exec(?:dir)?\b[^;|&]*\baws\b", cmd))
-        or bool(re.search(r"\bparallel\b[^;|&]*\baws\b", cmd))
-    )
-
     # Scan units: the command itself, every command/process-substitution body,
     # and every inline `sh -c`/`bash -c` script, so an aws invocation hidden by
     # quoting, a $()/<()/>() substitution, or a shell -c wrapper is still seen.
@@ -807,10 +827,32 @@ def main():
         # profile. Quoted separators may over-split; that only errs toward
         # stricter judgments.
         unit = re.sub(r"\\\r?\n", " ", unit)
+        loop_depth = 0
         for seg in re.split(r"[;\r\n]|&&|\|\||\||&(?!&)", unit):
+            # Loop/dispatcher detection on a quote-stripped view (classification
+            # still uses the original seg). A segment that STARTS with a loop
+            # keyword opens a loop body; a bare `done` closes it. Per-segment
+            # scoping means a mutation OUTSIDE the loop -- after `done`, or in an
+            # unrelated segment that merely says "wait for it" -- is no longer
+            # swept up by the mass-mutation deny the way a whole-command flag was.
+            bare = re.sub(r"'[^']*'|\"[^\"]*\"", " ", seg)
+            # A loop head is a segment beginning with for/while/until (an inner
+            # loop begins `do for ...`); `done` is a reserved word only in
+            # command position, i.e. at the start of a segment, so matching it
+            # there ignores a prose "done" that is merely an argument.
+            if re.match(r"\s*(?:do\s+)?(?:for|while|until)\b", bare):
+                loop_depth += 1
+            closes_loop = bool(re.match(r"\s*done\b", bare))
+            # This segment runs a mutating aws many times: it is inside a loop
+            # body, or it dispatches over a list (xargs / find -exec / parallel).
+            seg_mass = loop_depth > 0 or bool(
+                re.search(r"\b(?:xargs|parallel)\b|-exec(?:dir)?\b", bare)
+            )
             tokens = tokenize(seg)
             if not re.search(r"(^|[\s(`{])(?:\S*/)?aws(\s|$)", seg):
                 carried = update_carried_profile(tokens, carried)
+                if closes_loop and loop_depth > 0:
+                    loop_depth -= 1
                 continue
             for idx, tok in enumerate(tokens):
                 # The executable is the aws CLI when the token is `aws` or a
@@ -906,7 +948,7 @@ def main():
                     )
 
                 if mutating and not explicit_personal:
-                    if has_loop:
+                    if seg_mass:
                         decision(
                             "deny",
                             f"Mutating operation 'aws {service} {op}' inside a loop/batch "
@@ -968,6 +1010,27 @@ def main():
                             rec,
                         )
 
+                # Markers inside a resource NAME the operator is assigning on a
+                # create (hard prohibition #7: audit-visible values name the
+                # accountable human, never the tooling). Scoped to create so a
+                # command that merely REFERENCES a pre-existing brand-named
+                # resource is not blocked.
+                if cls == "create":
+                    for nm in name_flag_values(tokens, idx):
+                        if (
+                            MARKERS.search(nm)
+                            or MARKERS.search(canon_fold(nm))
+                            or brand_marker_hit(nm)
+                        ):
+                            decision(
+                                "deny",
+                                "Resource name contains a tool/automation marker "
+                                "(separator-, invisible-, or homoglyph-obfuscated markers "
+                                "included). Resource names are attributed to the accountable "
+                                "human operator only.",
+                                rec,
+                            )
+
                 m = re.search(r"--endpoint-url[= ](\S+)", seg)
                 if m:
                     url = m.group(1).strip("'\"")
@@ -1006,6 +1069,8 @@ def main():
                     rec["_asked"] = True
 
             carried = update_carried_profile(tokens, carried)
+            if closes_loop and loop_depth > 0:
+                loop_depth -= 1
 
     if worst == "destroy":
         reasons_ask.insert(
