@@ -2529,7 +2529,7 @@ cloudformation,list-stacks,read,0,0,1,model,prefix
 cloudformation,list-type-registrations,read,0,0,0,model,prefix
 cloudformation,list-type-versions,read,0,0,0,model,prefix
 cloudformation,list-types,read,0,0,1,model,prefix
-cloudformation,package,execute,0,0,0,review,reviewed
+cloudformation,package,execute,0,0,0,custom,curated
 cloudformation,publish-type,execute,0,0,0,model,prefix
 cloudformation,record-handler-progress,execute,0,0,0,review,reviewed
 cloudformation,register-publisher,create,0,0,0,model,prefix
@@ -16231,7 +16231,7 @@ ssm,start-associations-once,execute,0,0,0,model,prefix
 ssm,start-automation-execution,execute,0,0,0,model,prefix
 ssm,start-change-request-execution,execute,0,0,0,model,prefix
 ssm,start-execution-preview,execute,0,0,0,model,prefix
-ssm,start-session,execute,1,0,0,review,reviewed
+ssm,start-session,execute,1,0,0,custom,curated
 ssm,stop-automation-execution,execute,0,0,0,model,prefix
 ssm,terminate-session,destroy,1,0,0,model,prefix
 ssm,unlabel-parameter-version,modify,0,0,0,review,reviewed
@@ -16366,7 +16366,7 @@ ssm-sap,update-application-settings,modify,0,0,0,model,prefix
 sso,get-role-credentials,read,1,0,0,model,secret
 sso,list-account-roles,read,0,0,1,model,prefix
 sso,list-accounts,read,0,0,1,model,prefix
-sso,login,read,1,0,0,review,reviewed
+sso,login,read,1,0,0,custom,curated
 sso,logout,read,0,0,0,custom,curated
 sso-admin,attach-customer-managed-policy-reference-to-permission-set,modify,1,0,0,review,reviewed
 sso-admin,attach-managed-policy-to-permission-set,modify,1,0,0,review,reviewed

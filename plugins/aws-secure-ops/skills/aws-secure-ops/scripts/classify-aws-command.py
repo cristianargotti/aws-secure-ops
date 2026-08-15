@@ -24,10 +24,12 @@ decision is ever loosened):
      the gate stricter: it never grants the personal-profile exemption, which
      requires an explicit --profile / inline assignment on the invocation.
   2. aws invocations nested inside command substitution ($(...) and
-     backticks), process substitution (<(...) / >(...)), and inline shell
-     wrappers (bash -c / sh -c '<script>') are extracted and classified like
-     any other invocation, so a mutation cannot hide inside a quoted argument,
-     a process substitution, or a -c script string.
+     backticks), process substitution (<(...) / >(...)), and the common inline
+     shell wrappers (bash -c / sh -c '<script>', including attached -c'...',
+     -o mode -c, and here-strings) are extracted transitively and classified
+     like any other invocation. This covers the common forms, not every
+     conceivable wrapper -- genuinely novel obfuscation remains a documented
+     residual (see references/threat-model.md).
   3. A mutating command that sources its input from --cli-input-json /
      --cli-input-yaml file://... escalates to ask: the gate cannot inspect
      the file, so the operator confirms its contents match the stated intent.
@@ -613,13 +615,26 @@ def canon_fold(value):
     return normalized.translate(_CONFUSABLE_TABLE)
 
 
+# Per-brand obfuscation patterns: the brand's letters in order, allowing
+# separators between them (invisibles are already stripped by canon_fold), but
+# ANCHORED so the match is a whole word rather than a coincidental substring of a
+# longer one. This catches c-l-a-u-d-e, cl.aude, and open_ai, while leaving
+# ordinary hyphenated words clean (open-air, geminide-..., scope-nairobi) --
+# their brand letters run into more letters, so the trailing anchor fails.
+_BRAND_PATTERNS = [
+    re.compile(r"(?<![a-z0-9])" + r"[-_.\s]*".join(tok) + r"(?![a-z0-9])")
+    for tok in BRAND_TOKENS
+]
+
+
 def brand_marker_hit(value):
-    """Second marker pass: canonicalize (NFKC + homoglyph fold), strip
-    separators, then look for high-signal brand tokens only, so xx-c-l-a-u-d-e-run,
-    a soft-hyphen variant, and a Cyrillic-lookalike cannot dodge the
-    word-boundary pass while ordinary words (claudia, geminide-...) stay clean."""
-    stripped = re.sub(r"[-_.\s]", "", canon_fold(value))
-    return any(tok in stripped for tok in BRAND_TOKENS)
+    """Second marker pass: canonicalize (NFKC + homoglyph fold + lowercase), then
+    look for a brand token whose letters appear in order and separator-delimited,
+    anchored as a whole word -- so xx-c-l-a-u-d-e-run, a soft-hyphen variant, a
+    Cyrillic-lookalike, and open_ai are denied, while ordinary words (claudia,
+    open-air, geminide-...) stay clean."""
+    v = canon_fold(value)
+    return any(p.search(v) for p in _BRAND_PATTERNS)
 
 
 def extract_substitutions(text):
@@ -716,13 +731,22 @@ def extract_shell_c(text):
                 if t.startswith("--"):
                     j += 2 if t in SHELL_VALUE_OPTS else 1
                     continue
-                if t.startswith("-"):
-                    # A short-option cluster carrying 'c' (e.g. -c, -lc) means
-                    # the next positional is the script. Long options handled
-                    # above, so a bare '-'-prefixed token here is short-form.
-                    if "c" in t:
+                if t.startswith(("-", "+")):
+                    # -c with the script FUSED onto the option token
+                    # (-c'...', -lc"..." -> shell_words yields -cscript): the
+                    # remainder after the c is the script.
+                    m = re.match(r"[-+][a-z]*c(.+)$", t, re.IGNORECASE)
+                    if m:
+                        bodies.append(m.group(1))
                         saw_c = True
-                    j += 1
+                        break
+                    # A short cluster carrying 'c' (-c, -lc): the next positional
+                    # is the script.
+                    if "c" in t.lower():
+                        saw_c = True
+                    # -o/+o <mode>, -O <shopt> take the next token as their value,
+                    # which must not be mistaken for the -c script.
+                    j += 2 if re.search(r"[oO]$", t) else 1
                     continue
                 break  # first positional token: the -c script, if one was seen
             if saw_c and j < len(toks):
@@ -763,11 +787,12 @@ def main():
     if event.get("tool_name") != "Bash":
         sys.exit(0)
     cmd = (event.get("tool_input") or {}).get("command") or ""
-    # Pre-filter: skip the full parse only when there is no aws token at all.
-    # The preceding-char class includes quotes so an aws call wrapped in
-    # `bash -c 'aws ...'` still reaches the parser (extract_shell_c). Being
-    # broader here only ever means more commands are fully parsed, never fewer.
-    if not re.search(r"(^|[\s;&|(`{'\"])(?:\S*/)?aws(\s|$)", cmd):
+    # Pre-filter (a cheap perf gate only): skip the full parse when the command,
+    # with quotes removed, contains no "aws" substring at all. Quote removal
+    # keeps quote-split ("aws", a"w"s) and option-fused (-c'aws...') executables
+    # in scope; a broader match here only ever means more commands are fully
+    # parsed (then correctly classified or ignored), never fewer.
+    if "aws" not in re.sub(r"[\"']", "", cmd).lower():
         sys.exit(0)
 
     policy = load_policy()
@@ -805,7 +830,7 @@ def main():
     # a backtick, which a single non-recursive pass would miss. Bodies only ever
     # get shorter, `seen` dedupes, and the cap bounds any pathological fan-out.
     units, seen, queue = [], set(), [cmd]
-    while queue and len(units) < 256:
+    while queue and len(units) < 4096:
         u = queue.pop(0)
         if u in seen:
             continue
@@ -844,12 +869,22 @@ def main():
                 loop_depth += 1
             closes_loop = bool(re.match(r"\s*done\b", bare))
             # This segment runs a mutating aws many times: it is inside a loop
-            # body, or it dispatches over a list (xargs / find -exec / parallel).
+            # body, or it dispatches aws over a list (xargs / find -exec /
+            # parallel). The dispatcher must be followed by aws in the segment,
+            # so an ordinary path or name containing "-exec"/"xargs" (e.g.
+            # s3://my-exec/file) is not mistaken for a dispatch.
             seg_mass = loop_depth > 0 or bool(
-                re.search(r"\b(?:xargs|parallel)\b|-exec(?:dir)?\b", bare)
+                re.search(
+                    r"(?:\bxargs\b|\bparallel\b|-exec(?:dir)?\b)[^\n]*\baws\b", bare
+                )
             )
             tokens = tokenize(seg)
-            if not re.search(r"(^|[\s(`{])(?:\S*/)?aws(\s|$)", seg):
+            # Detect the aws executable from the TOKENS (after the shell strips
+            # quotes), not the raw string, so "aws"/'aws'/a"w"s are recognized.
+            if not any(
+                tok == "aws" or (tok.endswith("/aws") and "://" not in tok)
+                for tok in tokens
+            ):
                 carried = update_carried_profile(tokens, carried)
                 if closes_loop and loop_depth > 0:
                     loop_depth -= 1

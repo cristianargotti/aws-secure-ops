@@ -498,12 +498,12 @@ CUSTOM_ROWS = [
     ("eks", "get-token", "read", 1, 0, 0),
     ("eks", "update-kubeconfig", "modify", 0, 0, 0),
     ("rds", "generate-db-auth-token", "read", 1, 0, 0),
-    ("ssm", "start-session", "execute", 0, 0, 0),
+    ("ssm", "start-session", "execute", 1, 0, 0),  # interactive shell: sensitive
     ("cloudformation", "deploy", "modify", 0, 0, 0),
-    ("cloudformation", "package", "read", 0, 0, 0),
+    ("cloudformation", "package", "execute", 0, 0, 0),  # uploads artifacts
     ("cloudfront", "sign", "read", 1, 0, 0),
     ("configure", "export-credentials", "read", 1, 0, 0),
-    ("sso", "login", "read", 0, 0, 0),
+    ("sso", "login", "read", 1, 0, 0),  # mints cached SSO credentials: sensitive
     ("sso", "logout", "read", 0, 0, 0),
     ("logs", "tail", "read", 0, 0, 0),  # v2 CLI live log tail: a pure read
 ]
@@ -975,7 +975,17 @@ def main():
             / "inventory"
             / "corrections.json"
         )
-    for (svc, opn), (cls, sens) in load_corrections(corr_path).items():
+    corrections = load_corrections(corr_path)
+    # A key must live in exactly one authoritative layer. If it were in both
+    # CUSTOM_ROWS and corrections, the corrections overlay would silently win and
+    # the CUSTOM_ROWS value would be dead -- a maintenance trap. Fail the build.
+    overlap = sorted(set(corrections) & {(r[0], r[1]) for r in CUSTOM_ROWS})
+    if overlap:
+        sys.exit(
+            "build-inventory: keys are in BOTH CUSTOM_ROWS and corrections.json "
+            "(remove from one): " + ", ".join(f"{s} {o}" for s, o in overlap)
+        )
+    for (svc, opn), (cls, sens) in corrections.items():
         base = row_map.get((svc, opn))
         if base is None:
             continue  # a correction for an operation this CLI does not have

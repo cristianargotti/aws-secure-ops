@@ -603,13 +603,6 @@
   },
   {
     "service": "cloudformation",
-    "operation": "package",
-    "class": "execute",
-    "sensitive": 0,
-    "reason": "reviewed"
-  },
-  {
-    "service": "cloudformation",
     "operation": "record-handler-progress",
     "class": "execute",
     "sensitive": 0,
@@ -4943,13 +4936,6 @@
   },
   {
     "service": "ssm",
-    "operation": "start-session",
-    "class": "execute",
-    "sensitive": 1,
-    "reason": "reviewed"
-  },
-  {
-    "service": "ssm",
     "operation": "unlabel-parameter-version",
     "class": "modify",
     "sensitive": 0,
@@ -4973,13 +4959,6 @@
     "service": "ssm-sap",
     "operation": "stop-application",
     "class": "destroy",
-    "sensitive": 1,
-    "reason": "reviewed"
-  },
-  {
-    "service": "sso",
-    "operation": "login",
-    "class": "read",
     "sensitive": 1,
     "reason": "reviewed"
   },

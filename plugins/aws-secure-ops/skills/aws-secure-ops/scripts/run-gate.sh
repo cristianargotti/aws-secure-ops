@@ -14,7 +14,10 @@
 # watchdog, stay silent so ordinary work is never blocked.
 
 for _c in python3 python py; do
-  if command -v "$_c" >/dev/null 2>&1; then
+  # Verify the candidate is actually Python 3 before trusting it: a legacy
+  # `python` (Python 2) or a stub would run the gate into a crash and fail open.
+  if command -v "$_c" >/dev/null 2>&1 &&
+    "$_c" -c 'import sys; sys.exit(0 if sys.version_info[0] >= 3 else 1)' >/dev/null 2>&1; then
     exec "$_c" "$@"
   fi
 done
@@ -27,7 +30,7 @@ case "$*" in
     # PreToolUse gate: deny only when the event's command looks like an aws
     # invocation (erring strict is safe here -- this path is reached only on a
     # host with no Python, which the operator needs to fix regardless).
-    if printf '%s' "$_event" | grep -Eq 'aws[[:space:]]'; then
+    if printf '%s' "$_event" | grep -Eq 'aws([[:space:]]|\\[tn])'; then
       printf '%s\n' '{"hookSpecificOutput":{"hookEventName":"PreToolUse","permissionDecision":"deny","permissionDecisionReason":"aws-secure-ops: no Python interpreter found on PATH; aws commands are blocked until python3 (or python) is installed. Fail-closed by design."}}'
     fi
     exit 0
