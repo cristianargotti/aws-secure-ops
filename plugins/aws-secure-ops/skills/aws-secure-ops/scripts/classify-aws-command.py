@@ -841,6 +841,23 @@ def main():
 
                 mutating = cls != "read"
 
+                # A destructive verb reached with --recursive (or a wildcard
+                # --include/--exclude on an s3 delete) is a MASS operation, not a
+                # single target -- the confirmation prompt must say so rather than
+                # repeat the single-target "look before you delete" line.
+                if cls == "destroy" and (
+                    re.search(r"--recursive\b", seg)
+                    or (
+                        service == "s3"
+                        and re.search(r"--(?:include|exclude)[=\s]", seg)
+                    )
+                ):
+                    reasons_ask.append(
+                        f"'aws {service} {op}' with --recursive/wildcard removes MANY objects, "
+                        "not one target: enumerate first (bounded read), confirm the list, then "
+                        "delete one target per command."
+                    )
+
                 # Grants to public principal groups open world access without
                 # touching the --acl shorthand: an exposure boundary.
                 if mutating and PUBLIC_GRANT.search(seg):
