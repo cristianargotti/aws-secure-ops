@@ -234,10 +234,14 @@ part of a shared copy of this skill:
 ```
 
 Semantics: `readonly` profiles are the default for reads; `admin` profiles are
-used only during mutating commands; `frozen` profiles and accounts accept
-reads only (the enforcement hook denies everything else); `personal` profiles
-are outside this protocol's account rules but still get its hygiene.
-`required_tags` are merged into every tagging operation.
+used only during mutating commands; a `frozen` profile accepts reads only (the
+enforcement hook denies every mutation on it); `personal` profiles are outside
+this protocol's account rules but still get its hygiene. `required_tags` are
+merged into every tagging operation. `frozen_accounts` entries are honored by
+the hook only when they match a resolved profile _name_ (the gate cannot map a
+profile to an account ID without calling AWS); an account-ID entry is advisory
+— the doctor lints it, but a real account freeze must live in a deny SCP and in
+the credential lifecycle, never only here.
 
 ## Reference map
 
@@ -273,9 +277,11 @@ gate only lowers the odds of a careless keystroke; it never replaces them.
 
 The **watchdog** (`scripts/aws-ops-doctor.py --quick`) runs once at session
 start and stays silent when the seatbelt is sound. It speaks only to warn --
-gate missing, policy invalid, inventory drift against the installed CLI -- so
+gate missing, policy invalid, inventory inconsistent with its own summary -- so
 a control that quietly stopped working announces itself instead of failing in
-silence.
+silence. (Drift against the _installed_ CLI is not auto-detected: re-run
+`scripts/build-inventory.py` + `scripts/verify-inventory.py` after a CLI
+upgrade.)
 
 Tooling: `scripts/aws-preflight.py` prints a planning card for a command
 before you run it; `scripts/aws-ops-doctor.py` verifies the installation is

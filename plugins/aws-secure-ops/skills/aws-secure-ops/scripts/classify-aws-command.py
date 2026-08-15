@@ -534,12 +534,63 @@ def strip_invisibles(value):
     )
 
 
+# High-confidence Cyrillic/Greek look-alikes of the Latin letters used in the
+# markers, folded back to Latin so a homoglyph stamp/tag ("clаude" with a
+# Cyrillic 'а") cannot dodge the marker checks. NFKC (applied first) already
+# folds fullwidth/compatibility forms; this table covers the script-confusables
+# NFKC leaves alone. Kept to letters that actually appear in the markers.
+_CONFUSABLES = {
+    # Cyrillic -> Latin
+    "а": "a",
+    "е": "e",
+    "о": "o",
+    "р": "p",
+    "с": "c",
+    "х": "x",
+    "у": "y",
+    "і": "i",
+    "ј": "j",
+    "ѕ": "s",
+    "ԁ": "d",
+    "һ": "h",
+    "ӏ": "l",
+    "ԛ": "q",
+    "ԍ": "g",
+    "т": "t",
+    "н": "h",
+    "к": "k",
+    "м": "m",
+    # Greek -> Latin
+    "α": "a",
+    "ϲ": "c",
+    "ε": "e",
+    "ι": "i",
+    "ο": "o",
+    "ρ": "p",
+    "τ": "t",
+    "ν": "v",
+    "υ": "u",
+    "ɡ": "g",
+}
+_CONFUSABLE_TABLE = str.maketrans(_CONFUSABLES)
+
+
+def canon_fold(value):
+    """Normalize an audit-visible value to the ASCII the marker checks expect:
+    strip invisibles, apply NFKC (folds fullwidth/compatibility forms),
+    lower-case, then fold high-confidence script-confusables to Latin. So a
+    fullwidth or Cyrillic/Greek look-alike spelling of a marker collapses to the
+    same string an ASCII marker would."""
+    normalized = unicodedata.normalize("NFKC", strip_invisibles(value or "")).lower()
+    return normalized.translate(_CONFUSABLE_TABLE)
+
+
 def brand_marker_hit(value):
-    """Second marker pass: strip invisibles and separators, then look for
-    high-signal brand tokens only, so xx-c-l-a-u-d-e-run and a soft-hyphen
-    variant cannot dodge the word-boundary pass while ordinary words
-    (claudia, geminide-...) stay clean."""
-    stripped = re.sub(r"[-_.\s]", "", strip_invisibles(value).lower())
+    """Second marker pass: canonicalize (NFKC + homoglyph fold), strip
+    separators, then look for high-signal brand tokens only, so xx-c-l-a-u-d-e-run,
+    a soft-hyphen variant, and a Cyrillic-lookalike cannot dodge the
+    word-boundary pass while ordinary words (claudia, geminide-...) stay clean."""
+    stripped = re.sub(r"[-_.\s]", "", canon_fold(value))
     return any(tok in stripped for tok in BRAND_TOKENS)
 
 
@@ -696,6 +747,15 @@ def main():
     profiles = policy.get("profiles") or {}
     stamp_prefix = ((policy.get("operator") or {}).get("stamp_prefix") or "").strip()
     required_tags = policy.get("required_tags") or {}
+    # frozen_accounts holds account IDs (advisory: the gate can't resolve a
+    # profile to an account without calling AWS) OR profile names. When a
+    # resolved profile NAME matches an entry, treat it as frozen -- a
+    # defense-in-depth deny that only ever adds strictness.
+    frozen_names = {
+        str(x)
+        for x in (policy.get("frozen_accounts") or [])
+        if isinstance(x, (str, int))
+    }
     inventory = load_inventory()
 
     if re.search(r"--no-verify-ssl\b", cmd):
@@ -817,7 +877,10 @@ def main():
                     service, op, cls, sens, stamp, effective_profile, prof_class
                 )
 
-                if prof_class == "frozen" and cls != "read":
+                frozen = prof_class == "frozen" or (
+                    effective_profile and effective_profile in frozen_names
+                )
+                if frozen and cls != "read":
                     decision(
                         "deny",
                         f"Profile '{effective_profile}' is FROZEN by local policy: reads only. "
@@ -852,7 +915,7 @@ def main():
                         )
                     if (
                         MARKERS.search(stamp)
-                        or MARKERS.search(strip_invisibles(stamp))
+                        or MARKERS.search(canon_fold(stamp))
                         or brand_marker_hit(stamp)
                     ):
                         decision(
@@ -877,7 +940,7 @@ def main():
                     tagval = m.group(1)
                     if (
                         MARKERS.search(tagval)
-                        or MARKERS.search(strip_invisibles(tagval))
+                        or MARKERS.search(canon_fold(tagval))
                         or brand_marker_hit(tagval)
                     ):
                         decision(

@@ -43,8 +43,10 @@ proceeds as if the gate did not exist. It never auto-approves anything.
 The following is enumerated from the code, not from intent. Classification
 comes from the full inventory of the installed CLI
 (`references/inventory/inventory.csv`: class, sensitivity, per-operation
-rules), with a verb taxonomy as fallback; an operation the gate cannot
-classify is treated as a sensitive guarded mutation, never as a read.
+rules), with a verb taxonomy as fallback; an operation whose _verb_ the
+taxonomy does not know is treated as a sensitive guarded mutation. (An
+unknown-_service_ operation whose name starts with a read verb still classifies
+as a read — see the residual noted below.)
 
 ### Denied outright
 
@@ -82,9 +84,15 @@ classify is treated as a sensitive guarded mutation, never as a read.
   grants the personal-profile exemption, which still needs an explicit
   profile on the invocation itself. Where the splitter over-splits, the
   error is always toward the stricter judgment.
-- Unknown services and verbs classify as guarded mutations
-  (modify, sensitive), which means the newest CLI operation gets the
-  strictest lane until the inventory is regenerated.
+- Unknown **verbs** classify as guarded mutations (modify, sensitive), so a
+  newly-named mutating operation gets a strict lane until the inventory is
+  regenerated. But classification falls back to the verb alone regardless of
+  service: an operation of a service _newer than the inventory_ whose name
+  begins with a read verb (get/list/describe/...) classifies as an ordinary
+  read and passes unstamped. That is a residual worth naming — a brand-new
+  service could name a credential-emitting operation `get-*` — and the fix is
+  to regenerate the inventory after a CLI upgrade so the celebrated exceptions
+  are re-encoded.
 
 ## What the gate does not and cannot catch
 
@@ -245,8 +253,11 @@ could otherwise run for hours believing it was protected when it was not. A
 `SessionStart` health check (`scripts/aws-ops-doctor.py --quick`) runs at the
 start of every session, stays quiet when the seatbelt is sound, and speaks
 only to warn that it has come loose -- gate unregistered, policy invalid,
-inventory drifted from the installed CLI. A silently broken seatbelt now
-announces itself. It is a warning, not a wall: it never blocks work, only
+inventory inconsistent with its own summary. (It does not auto-detect drift
+against the _installed_ CLI; that check is `scripts/build-inventory.py` +
+`scripts/verify-inventory.py`, re-run after a CLI upgrade.) A silently broken
+seatbelt now announces itself. It is a warning, not a wall: it never blocks
+work, only
 tells you the odds changed.
 
 And because the whole thing ships as one plugin, **"off" is explicit and

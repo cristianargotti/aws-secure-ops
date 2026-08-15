@@ -13,7 +13,7 @@ Repackaged as a standalone Claude Code plugin with a single enable/disable switc
   (`${CLAUDE_PLUGIN_ROOT}`) instead of a hand-edited `settings.json` entry.
 - **Session watchdog** — a `SessionStart` health check (`aws-ops-doctor.py --quick`)
   that stays silent when healthy and warns via `systemMessage` if the seatbelt is
-  loose (gate missing, policy invalid, inventory drift versus the installed CLI).
+  loose (gate missing, policy invalid, inventory inconsistent with its summary).
 - **Opt-in terminal shim** — `aws-shim.sh` routes normal-terminal `aws` commands
   through the same classifier (best-effort; a path-qualified binary bypasses it).
 - **Installer** — `aws-ops-install.py` wires/removes the hook for non-plugin users

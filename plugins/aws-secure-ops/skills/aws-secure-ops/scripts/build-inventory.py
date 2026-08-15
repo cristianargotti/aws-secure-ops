@@ -507,6 +507,29 @@ CUSTOM_ROWS = [
 ]
 
 
+def load_corrections(path):
+    """Return {(service, operation): (class, sensitive)} from a corrections JSON
+    (a list of {service, operation, class, sensitive} objects). A missing or
+    unreadable file yields no corrections -- a model-only build, which is
+    clearly less strict, so corrections.json belongs in the repo beside the CSV.
+    """
+    try:
+        data = json.loads(Path(path).read_text(encoding="utf-8"))
+    except (OSError, ValueError):
+        return {}
+    valid = {"read", "execute", "create", "modify", "destroy"}
+    out = {}
+    for c in data if isinstance(data, list) else []:
+        if not (isinstance(c, dict) and {"service", "operation", "class"} <= set(c)):
+            continue
+        cls = str(c["class"]).strip().lower()
+        if cls not in valid:
+            continue
+        sens = 1 if int(c.get("sensitive", 0)) else 0
+        out[(str(c["service"]).strip(), str(c["operation"]).strip())] = (cls, sens)
+    return out
+
+
 # --------------------------------------------------------------------------
 # Domain partition for human review
 # --------------------------------------------------------------------------
@@ -932,12 +955,50 @@ def main():
             per_service[cli_service] = per_service.get(cli_service, 0) + 1
             class_totals[cls] = class_totals.get(cls, 0) + 1
 
+    # CUSTOM_ROWS are authoritative overrides, not appends: a customization that
+    # shares a key with a modeled operation REPLACES it (custom wins), so a
+    # rebuild never emits a duplicate (service, operation) key.
+    row_map = {(r[0], r[1]): r for r in rows}
     for svc, opn, cls, sens, dry, pag in CUSTOM_ROWS:
-        rows.append((svc, opn, cls, sens, dry, pag, "custom", "curated"))
-        per_service[svc] = per_service.get(svc, 0) + 1
-        class_totals[cls] = class_totals.get(cls, 0) + 1
+        row_map[(svc, opn)] = (svc, opn, cls, sens, dry, pag, "custom", "curated")
 
-    rows.sort()
+    # Re-apply the reviewed corrections layer so a rebuild does not silently
+    # revert the human review the shipped inventory carries. corrections.json
+    # lives beside the CSV (the out dir); fall back to the copy in the skill.
+    corr_path = out / "corrections.json"
+    if not corr_path.is_file():
+        corr_path = (
+            Path(__file__).resolve().parent.parent
+            / "references"
+            / "inventory"
+            / "corrections.json"
+        )
+    for (svc, opn), (cls, sens) in load_corrections(corr_path).items():
+        base = row_map.get((svc, opn))
+        if base is None:
+            continue  # a correction for an operation this CLI does not have
+        row_map[(svc, opn)] = (
+            svc,
+            opn,
+            cls,
+            sens,
+            base[4],
+            base[5],
+            "review",
+            "reviewed",
+        )
+
+    rows = sorted(row_map.values())
+
+    # Recompute every aggregate from the FINAL rows: overrides and corrections
+    # change the class/sensitive distribution, so the model-loop tallies are stale.
+    per_service, class_totals = {}, {}
+    for r in rows:
+        per_service[r[0]] = per_service.get(r[0], 0) + 1
+        class_totals[r[2]] = class_totals.get(r[2], 0) + 1
+    sensitive_ops = sum(1 for r in rows if str(r[3]) == "1")
+    reviewed_rows = sum(1 for r in rows if r[6] == "review")
+
     with (out / "inventory.csv").open("w", newline="") as fh:
         w = csv.writer(fh)
         w.writerow(
@@ -973,6 +1034,8 @@ def main():
         "class_totals": dict(sorted(class_totals.items())),
         "unknown_verb_operations": unknown,
         "domain_sizes": {d: len(s) for d, s in domains.items()},
+        "sensitive_operations": sensitive_ops,
+        "reviewed_rows": reviewed_rows,
     }
     (out / "summary.json").write_text(json.dumps(summary, indent=2) + "\n")
     print(json.dumps(summary, indent=2))

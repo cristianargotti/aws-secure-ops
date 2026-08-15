@@ -1,0 +1,5434 @@
+[
+  {
+    "service": "account",
+    "operation": "accept-primary-email-update",
+    "class": "modify",
+    "sensitive": 1,
+    "reason": "reviewed"
+  },
+  {
+    "service": "account",
+    "operation": "disable-region",
+    "class": "modify",
+    "sensitive": 1,
+    "reason": "reviewed"
+  },
+  {
+    "service": "account",
+    "operation": "start-primary-email-update",
+    "class": "execute",
+    "sensitive": 1,
+    "reason": "reviewed"
+  },
+  {
+    "service": "acm",
+    "operation": "export-certificate",
+    "class": "execute",
+    "sensitive": 1,
+    "reason": "reviewed"
+  },
+  {
+    "service": "acm",
+    "operation": "remove-tags-from-certificate",
+    "class": "modify",
+    "sensitive": 0,
+    "reason": "reviewed"
+  },
+  {
+    "service": "acm-pca",
+    "operation": "create-permission",
+    "class": "create",
+    "sensitive": 1,
+    "reason": "reviewed"
+  },
+  {
+    "service": "acm-pca",
+    "operation": "issue-certificate",
+    "class": "create",
+    "sensitive": 1,
+    "reason": "reviewed"
+  },
+  {
+    "service": "acm-pca",
+    "operation": "put-policy",
+    "class": "modify",
+    "sensitive": 1,
+    "reason": "reviewed"
+  },
+  {
+    "service": "aiops",
+    "operation": "put-investigation-group-policy",
+    "class": "modify",
+    "sensitive": 1,
+    "reason": "reviewed"
+  },
+  {
+    "service": "amplifybackend",
+    "operation": "create-token",
+    "class": "create",
+    "sensitive": 1,
+    "reason": "reviewed"
+  },
+  {
+    "service": "amplifybackend",
+    "operation": "get-token",
+    "class": "read",
+    "sensitive": 1,
+    "reason": "reviewed"
+  },
+  {
+    "service": "amplifyuibuilder",
+    "operation": "exchange-code-for-token",
+    "class": "execute",
+    "sensitive": 1,
+    "reason": "reviewed"
+  },
+  {
+    "service": "amplifyuibuilder",
+    "operation": "refresh-token",
+    "class": "execute",
+    "sensitive": 1,
+    "reason": "reviewed"
+  },
+  {
+    "service": "apigateway",
+    "operation": "create-api-key",
+    "class": "create",
+    "sensitive": 1,
+    "reason": "reviewed"
+  },
+  {
+    "service": "apigateway",
+    "operation": "generate-client-certificate",
+    "class": "create",
+    "sensitive": 0,
+    "reason": "reviewed"
+  },
+  {
+    "service": "apigateway",
+    "operation": "get-api-key",
+    "class": "read",
+    "sensitive": 1,
+    "reason": "reviewed"
+  },
+  {
+    "service": "apigateway",
+    "operation": "get-api-keys",
+    "class": "read",
+    "sensitive": 1,
+    "reason": "reviewed"
+  },
+  {
+    "service": "apigateway",
+    "operation": "get-usage-plan-key",
+    "class": "read",
+    "sensitive": 1,
+    "reason": "reviewed"
+  },
+  {
+    "service": "apigateway",
+    "operation": "get-usage-plan-keys",
+    "class": "read",
+    "sensitive": 1,
+    "reason": "reviewed"
+  },
+  {
+    "service": "apigatewayv2",
+    "operation": "export-api",
+    "class": "read",
+    "sensitive": 0,
+    "reason": "reviewed"
+  },
+  {
+    "service": "apigatewayv2",
+    "operation": "put-portal-product-sharing-policy",
+    "class": "modify",
+    "sensitive": 1,
+    "reason": "reviewed"
+  },
+  {
+    "service": "apigatewayv2",
+    "operation": "reimport-api",
+    "class": "modify",
+    "sensitive": 0,
+    "reason": "reviewed"
+  },
+  {
+    "service": "appfabric",
+    "operation": "stop-ingestion",
+    "class": "destroy",
+    "sensitive": 1,
+    "reason": "reviewed"
+  },
+  {
+    "service": "appflow",
+    "operation": "unregister-connector",
+    "class": "destroy",
+    "sensitive": 1,
+    "reason": "reviewed"
+  },
+  {
+    "service": "appstream",
+    "operation": "create-app-block-builder-streaming-url",
+    "class": "create",
+    "sensitive": 1,
+    "reason": "reviewed"
+  },
+  {
+    "service": "appstream",
+    "operation": "create-image-builder-streaming-url",
+    "class": "create",
+    "sensitive": 1,
+    "reason": "reviewed"
+  },
+  {
+    "service": "appstream",
+    "operation": "create-streaming-url",
+    "class": "create",
+    "sensitive": 1,
+    "reason": "reviewed"
+  },
+  {
+    "service": "appstream",
+    "operation": "disable-user",
+    "class": "modify",
+    "sensitive": 1,
+    "reason": "reviewed"
+  },
+  {
+    "service": "appstream",
+    "operation": "stop-fleet",
+    "class": "destroy",
+    "sensitive": 1,
+    "reason": "reviewed"
+  },
+  {
+    "service": "appstream",
+    "operation": "update-image-permissions",
+    "class": "modify",
+    "sensitive": 1,
+    "reason": "reviewed"
+  },
+  {
+    "service": "appsync",
+    "operation": "create-api-key",
+    "class": "create",
+    "sensitive": 1,
+    "reason": "reviewed"
+  },
+  {
+    "service": "appsync",
+    "operation": "list-api-keys",
+    "class": "read",
+    "sensitive": 1,
+    "reason": "reviewed"
+  },
+  {
+    "service": "arc-region-switch",
+    "operation": "start-plan-execution",
+    "class": "execute",
+    "sensitive": 1,
+    "reason": "reviewed"
+  },
+  {
+    "service": "arc-zonal-shift",
+    "operation": "start-practice-run",
+    "class": "execute",
+    "sensitive": 1,
+    "reason": "reviewed"
+  },
+  {
+    "service": "arc-zonal-shift",
+    "operation": "start-zonal-shift",
+    "class": "execute",
+    "sensitive": 1,
+    "reason": "reviewed"
+  },
+  {
+    "service": "athena",
+    "operation": "create-capacity-reservation",
+    "class": "create",
+    "sensitive": 1,
+    "reason": "reviewed"
+  },
+  {
+    "service": "athena",
+    "operation": "create-presigned-notebook-url",
+    "class": "create",
+    "sensitive": 1,
+    "reason": "reviewed"
+  },
+  {
+    "service": "auditmanager",
+    "operation": "start-assessment-framework-share",
+    "class": "execute",
+    "sensitive": 1,
+    "reason": "reviewed"
+  },
+  {
+    "service": "autoscaling",
+    "operation": "delete-tags",
+    "class": "modify",
+    "sensitive": 0,
+    "reason": "reviewed"
+  },
+  {
+    "service": "autoscaling",
+    "operation": "enter-standby",
+    "class": "destroy",
+    "sensitive": 1,
+    "reason": "reviewed"
+  },
+  {
+    "service": "autoscaling",
+    "operation": "exit-standby",
+    "class": "modify",
+    "sensitive": 0,
+    "reason": "reviewed"
+  },
+  {
+    "service": "autoscaling",
+    "operation": "record-lifecycle-action-heartbeat",
+    "class": "execute",
+    "sensitive": 0,
+    "reason": "reviewed"
+  },
+  {
+    "service": "autoscaling",
+    "operation": "set-desired-capacity",
+    "class": "modify",
+    "sensitive": 1,
+    "reason": "reviewed"
+  },
+  {
+    "service": "autoscaling",
+    "operation": "set-instance-health",
+    "class": "modify",
+    "sensitive": 1,
+    "reason": "reviewed"
+  },
+  {
+    "service": "backup",
+    "operation": "create-restore-access-backup-vault",
+    "class": "create",
+    "sensitive": 1,
+    "reason": "reviewed"
+  },
+  {
+    "service": "backup",
+    "operation": "delete-backup-vault-notifications",
+    "class": "modify",
+    "sensitive": 0,
+    "reason": "reviewed"
+  },
+  {
+    "service": "backup",
+    "operation": "export-backup-plan-template",
+    "class": "read",
+    "sensitive": 0,
+    "reason": "reviewed"
+  },
+  {
+    "service": "backup",
+    "operation": "put-backup-vault-access-policy",
+    "class": "modify",
+    "sensitive": 1,
+    "reason": "reviewed"
+  },
+  {
+    "service": "backup",
+    "operation": "put-backup-vault-lock-configuration",
+    "class": "modify",
+    "sensitive": 1,
+    "reason": "reviewed"
+  },
+  {
+    "service": "backup-gateway",
+    "operation": "update-gateway-software-now",
+    "class": "modify",
+    "sensitive": 1,
+    "reason": "reviewed"
+  },
+  {
+    "service": "bedrock-agent",
+    "operation": "ingest-knowledge-base-documents",
+    "class": "execute",
+    "sensitive": 0,
+    "reason": "reviewed"
+  },
+  {
+    "service": "bedrock-agent",
+    "operation": "prepare-agent",
+    "class": "execute",
+    "sensitive": 0,
+    "reason": "reviewed"
+  },
+  {
+    "service": "bedrock-agent",
+    "operation": "prepare-flow",
+    "class": "execute",
+    "sensitive": 0,
+    "reason": "reviewed"
+  },
+  {
+    "service": "bedrock-agent-runtime",
+    "operation": "end-session",
+    "class": "modify",
+    "sensitive": 0,
+    "reason": "reviewed"
+  },
+  {
+    "service": "bedrock-agent-runtime",
+    "operation": "optimize-prompt",
+    "class": "execute",
+    "sensitive": 0,
+    "reason": "reviewed"
+  },
+  {
+    "service": "bedrock-agent-runtime",
+    "operation": "rerank",
+    "class": "execute",
+    "sensitive": 0,
+    "reason": "reviewed"
+  },
+  {
+    "service": "bedrock-agentcore",
+    "operation": "get-resource-api-key",
+    "class": "read",
+    "sensitive": 1,
+    "reason": "reviewed"
+  },
+  {
+    "service": "bedrock-agentcore",
+    "operation": "get-resource-oauth2-token",
+    "class": "read",
+    "sensitive": 1,
+    "reason": "reviewed"
+  },
+  {
+    "service": "bedrock-agentcore",
+    "operation": "get-workload-access-token",
+    "class": "read",
+    "sensitive": 1,
+    "reason": "reviewed"
+  },
+  {
+    "service": "bedrock-agentcore",
+    "operation": "get-workload-access-token-for-jwt",
+    "class": "read",
+    "sensitive": 1,
+    "reason": "reviewed"
+  },
+  {
+    "service": "bedrock-agentcore",
+    "operation": "get-workload-access-token-for-user-id",
+    "class": "read",
+    "sensitive": 1,
+    "reason": "reviewed"
+  },
+  {
+    "service": "bedrock-agentcore-control",
+    "operation": "synchronize-gateway-targets",
+    "class": "modify",
+    "sensitive": 0,
+    "reason": "reviewed"
+  },
+  {
+    "service": "bedrock-agentcore-control",
+    "operation": "update-policy",
+    "class": "modify",
+    "sensitive": 1,
+    "reason": "reviewed"
+  },
+  {
+    "service": "bedrock-runtime",
+    "operation": "converse",
+    "class": "execute",
+    "sensitive": 0,
+    "reason": "reviewed"
+  },
+  {
+    "service": "bedrock-runtime",
+    "operation": "converse-stream",
+    "class": "execute",
+    "sensitive": 0,
+    "reason": "reviewed"
+  },
+  {
+    "service": "budgets",
+    "operation": "execute-budget-action",
+    "class": "execute",
+    "sensitive": 1,
+    "reason": "reviewed"
+  },
+  {
+    "service": "ce",
+    "operation": "provide-anomaly-feedback",
+    "class": "modify",
+    "sensitive": 0,
+    "reason": "reviewed"
+  },
+  {
+    "service": "chime",
+    "operation": "batch-suspend-user",
+    "class": "modify",
+    "sensitive": 1,
+    "reason": "reviewed"
+  },
+  {
+    "service": "chime",
+    "operation": "create-meeting-dial-out",
+    "class": "execute",
+    "sensitive": 0,
+    "reason": "reviewed"
+  },
+  {
+    "service": "chime",
+    "operation": "create-phone-number-order",
+    "class": "create",
+    "sensitive": 1,
+    "reason": "reviewed"
+  },
+  {
+    "service": "chime",
+    "operation": "logout-user",
+    "class": "execute",
+    "sensitive": 1,
+    "reason": "reviewed"
+  },
+  {
+    "service": "chime",
+    "operation": "redact-conversation-message",
+    "class": "destroy",
+    "sensitive": 1,
+    "reason": "reviewed"
+  },
+  {
+    "service": "chime",
+    "operation": "redact-room-message",
+    "class": "destroy",
+    "sensitive": 1,
+    "reason": "reviewed"
+  },
+  {
+    "service": "chime-sdk-identity",
+    "operation": "create-app-instance-admin",
+    "class": "create",
+    "sensitive": 1,
+    "reason": "reviewed"
+  },
+  {
+    "service": "chime-sdk-meetings",
+    "operation": "batch-create-attendee",
+    "class": "create",
+    "sensitive": 1,
+    "reason": "reviewed"
+  },
+  {
+    "service": "chime-sdk-meetings",
+    "operation": "create-attendee",
+    "class": "create",
+    "sensitive": 1,
+    "reason": "reviewed"
+  },
+  {
+    "service": "chime-sdk-meetings",
+    "operation": "create-meeting-with-attendees",
+    "class": "create",
+    "sensitive": 1,
+    "reason": "reviewed"
+  },
+  {
+    "service": "chime-sdk-messaging",
+    "operation": "channel-flow-callback",
+    "class": "execute",
+    "sensitive": 0,
+    "reason": "reviewed"
+  },
+  {
+    "service": "chime-sdk-messaging",
+    "operation": "redact-channel-message",
+    "class": "destroy",
+    "sensitive": 1,
+    "reason": "reviewed"
+  },
+  {
+    "service": "chime-sdk-voice",
+    "operation": "create-phone-number-order",
+    "class": "create",
+    "sensitive": 1,
+    "reason": "reviewed"
+  },
+  {
+    "service": "chime-sdk-voice",
+    "operation": "create-sip-media-application-call",
+    "class": "execute",
+    "sensitive": 0,
+    "reason": "reviewed"
+  },
+  {
+    "service": "chime-sdk-voice",
+    "operation": "put-voice-connector-termination-credentials",
+    "class": "modify",
+    "sensitive": 1,
+    "reason": "reviewed"
+  },
+  {
+    "service": "cleanrooms",
+    "operation": "populate-id-mapping-table",
+    "class": "execute",
+    "sensitive": 0,
+    "reason": "reviewed"
+  },
+  {
+    "service": "cleanroomsml",
+    "operation": "put-configured-audience-model-policy",
+    "class": "modify",
+    "sensitive": 1,
+    "reason": "reviewed"
+  },
+  {
+    "service": "cloudformation",
+    "operation": "continue-update-rollback",
+    "class": "modify",
+    "sensitive": 0,
+    "reason": "reviewed"
+  },
+  {
+    "service": "cloudformation",
+    "operation": "execute-change-set",
+    "class": "modify",
+    "sensitive": 1,
+    "reason": "reviewed"
+  },
+  {
+    "service": "cloudformation",
+    "operation": "package",
+    "class": "execute",
+    "sensitive": 0,
+    "reason": "reviewed"
+  },
+  {
+    "service": "cloudformation",
+    "operation": "record-handler-progress",
+    "class": "execute",
+    "sensitive": 0,
+    "reason": "reviewed"
+  },
+  {
+    "service": "cloudfront",
+    "operation": "disassociate-distribution-tenant-web-acl",
+    "class": "modify",
+    "sensitive": 1,
+    "reason": "reviewed"
+  },
+  {
+    "service": "cloudfront",
+    "operation": "disassociate-distribution-web-acl",
+    "class": "modify",
+    "sensitive": 1,
+    "reason": "reviewed"
+  },
+  {
+    "service": "cloudfront",
+    "operation": "verify-dns-configuration",
+    "class": "read",
+    "sensitive": 0,
+    "reason": "reviewed"
+  },
+  {
+    "service": "cloudhsm",
+    "operation": "remove-tags-from-resource",
+    "class": "modify",
+    "sensitive": 0,
+    "reason": "reviewed"
+  },
+  {
+    "service": "cloudsearch",
+    "operation": "build-suggesters",
+    "class": "execute",
+    "sensitive": 0,
+    "reason": "reviewed"
+  },
+  {
+    "service": "cloudsearchdomain",
+    "operation": "suggest",
+    "class": "read",
+    "sensitive": 0,
+    "reason": "reviewed"
+  },
+  {
+    "service": "cloudtrail",
+    "operation": "put-event-selectors",
+    "class": "modify",
+    "sensitive": 1,
+    "reason": "reviewed"
+  },
+  {
+    "service": "cloudtrail",
+    "operation": "register-organization-delegated-admin",
+    "class": "create",
+    "sensitive": 1,
+    "reason": "reviewed"
+  },
+  {
+    "service": "cloudtrail",
+    "operation": "remove-tags",
+    "class": "modify",
+    "sensitive": 0,
+    "reason": "reviewed"
+  },
+  {
+    "service": "cloudtrail",
+    "operation": "stop-event-data-store-ingestion",
+    "class": "destroy",
+    "sensitive": 1,
+    "reason": "reviewed"
+  },
+  {
+    "service": "cloudtrail",
+    "operation": "update-trail",
+    "class": "modify",
+    "sensitive": 1,
+    "reason": "reviewed"
+  },
+  {
+    "service": "cloudwatch",
+    "operation": "set-alarm-state",
+    "class": "execute",
+    "sensitive": 1,
+    "reason": "reviewed"
+  },
+  {
+    "service": "cloudwatch",
+    "operation": "stop-metric-streams",
+    "class": "destroy",
+    "sensitive": 1,
+    "reason": "reviewed"
+  },
+  {
+    "service": "codeartifact",
+    "operation": "dispose-package-versions",
+    "class": "destroy",
+    "sensitive": 0,
+    "reason": "reviewed"
+  },
+  {
+    "service": "codeartifact",
+    "operation": "put-domain-permissions-policy",
+    "class": "modify",
+    "sensitive": 1,
+    "reason": "reviewed"
+  },
+  {
+    "service": "codeartifact",
+    "operation": "put-repository-permissions-policy",
+    "class": "modify",
+    "sensitive": 1,
+    "reason": "reviewed"
+  },
+  {
+    "service": "codebuild",
+    "operation": "import-source-credentials",
+    "class": "create",
+    "sensitive": 1,
+    "reason": "reviewed"
+  },
+  {
+    "service": "codebuild",
+    "operation": "invalidate-project-cache",
+    "class": "modify",
+    "sensitive": 0,
+    "reason": "reviewed"
+  },
+  {
+    "service": "codecatalyst",
+    "operation": "create-access-token",
+    "class": "create",
+    "sensitive": 1,
+    "reason": "reviewed"
+  },
+  {
+    "service": "codedeploy",
+    "operation": "continue-deployment",
+    "class": "execute",
+    "sensitive": 1,
+    "reason": "reviewed"
+  },
+  {
+    "service": "codedeploy",
+    "operation": "remove-tags-from-on-premises-instances",
+    "class": "modify",
+    "sensitive": 0,
+    "reason": "reviewed"
+  },
+  {
+    "service": "codedeploy",
+    "operation": "skip-wait-time-for-instance-termination",
+    "class": "destroy",
+    "sensitive": 1,
+    "reason": "reviewed"
+  },
+  {
+    "service": "codeguruprofiler",
+    "operation": "put-permission",
+    "class": "modify",
+    "sensitive": 1,
+    "reason": "reviewed"
+  },
+  {
+    "service": "codepipeline",
+    "operation": "acknowledge-job",
+    "class": "execute",
+    "sensitive": 0,
+    "reason": "reviewed"
+  },
+  {
+    "service": "codepipeline",
+    "operation": "acknowledge-third-party-job",
+    "class": "execute",
+    "sensitive": 0,
+    "reason": "reviewed"
+  },
+  {
+    "service": "codepipeline",
+    "operation": "get-job-details",
+    "class": "read",
+    "sensitive": 1,
+    "reason": "reviewed"
+  },
+  {
+    "service": "codepipeline",
+    "operation": "get-third-party-job-details",
+    "class": "read",
+    "sensitive": 1,
+    "reason": "reviewed"
+  },
+  {
+    "service": "codepipeline",
+    "operation": "poll-for-jobs",
+    "class": "execute",
+    "sensitive": 1,
+    "reason": "reviewed"
+  },
+  {
+    "service": "codepipeline",
+    "operation": "put-approval-result",
+    "class": "execute",
+    "sensitive": 1,
+    "reason": "reviewed"
+  },
+  {
+    "service": "cognito-identity",
+    "operation": "set-identity-pool-roles",
+    "class": "modify",
+    "sensitive": 1,
+    "reason": "reviewed"
+  },
+  {
+    "service": "cognito-idp",
+    "operation": "admin-disable-provider-for-user",
+    "class": "modify",
+    "sensitive": 1,
+    "reason": "reviewed"
+  },
+  {
+    "service": "cognito-idp",
+    "operation": "admin-disable-user",
+    "class": "modify",
+    "sensitive": 1,
+    "reason": "reviewed"
+  },
+  {
+    "service": "cognito-idp",
+    "operation": "admin-forget-device",
+    "class": "modify",
+    "sensitive": 0,
+    "reason": "reviewed"
+  },
+  {
+    "service": "cognito-idp",
+    "operation": "admin-initiate-auth",
+    "class": "execute",
+    "sensitive": 1,
+    "reason": "reviewed"
+  },
+  {
+    "service": "cognito-idp",
+    "operation": "admin-reset-user-password",
+    "class": "modify",
+    "sensitive": 1,
+    "reason": "reviewed"
+  },
+  {
+    "service": "cognito-idp",
+    "operation": "admin-respond-to-auth-challenge",
+    "class": "execute",
+    "sensitive": 1,
+    "reason": "reviewed"
+  },
+  {
+    "service": "cognito-idp",
+    "operation": "admin-set-user-password",
+    "class": "modify",
+    "sensitive": 1,
+    "reason": "reviewed"
+  },
+  {
+    "service": "cognito-idp",
+    "operation": "admin-user-global-sign-out",
+    "class": "execute",
+    "sensitive": 1,
+    "reason": "reviewed"
+  },
+  {
+    "service": "cognito-idp",
+    "operation": "associate-software-token",
+    "class": "modify",
+    "sensitive": 1,
+    "reason": "reviewed"
+  },
+  {
+    "service": "cognito-idp",
+    "operation": "confirm-forgot-password",
+    "class": "execute",
+    "sensitive": 1,
+    "reason": "reviewed"
+  },
+  {
+    "service": "cognito-idp",
+    "operation": "create-user-pool-client",
+    "class": "create",
+    "sensitive": 1,
+    "reason": "reviewed"
+  },
+  {
+    "service": "cognito-idp",
+    "operation": "describe-user-pool-client",
+    "class": "read",
+    "sensitive": 1,
+    "reason": "reviewed"
+  },
+  {
+    "service": "cognito-idp",
+    "operation": "forget-device",
+    "class": "modify",
+    "sensitive": 0,
+    "reason": "reviewed"
+  },
+  {
+    "service": "cognito-idp",
+    "operation": "forgot-password",
+    "class": "execute",
+    "sensitive": 1,
+    "reason": "reviewed"
+  },
+  {
+    "service": "cognito-idp",
+    "operation": "get-tokens-from-refresh-token",
+    "class": "read",
+    "sensitive": 1,
+    "reason": "reviewed"
+  },
+  {
+    "service": "cognito-idp",
+    "operation": "global-sign-out",
+    "class": "execute",
+    "sensitive": 1,
+    "reason": "reviewed"
+  },
+  {
+    "service": "cognito-idp",
+    "operation": "initiate-auth",
+    "class": "execute",
+    "sensitive": 1,
+    "reason": "reviewed"
+  },
+  {
+    "service": "cognito-idp",
+    "operation": "respond-to-auth-challenge",
+    "class": "execute",
+    "sensitive": 1,
+    "reason": "reviewed"
+  },
+  {
+    "service": "cognito-idp",
+    "operation": "update-user-pool-client",
+    "class": "modify",
+    "sensitive": 1,
+    "reason": "reviewed"
+  },
+  {
+    "service": "cognito-sync",
+    "operation": "bulk-publish",
+    "class": "execute",
+    "sensitive": 0,
+    "reason": "reviewed"
+  },
+  {
+    "service": "cognito-sync",
+    "operation": "unsubscribe-from-dataset",
+    "class": "modify",
+    "sensitive": 0,
+    "reason": "reviewed"
+  },
+  {
+    "service": "comprehend",
+    "operation": "contains-pii-entities",
+    "class": "execute",
+    "sensitive": 0,
+    "reason": "reviewed"
+  },
+  {
+    "service": "comprehendmedical",
+    "operation": "infer-icd10-cm",
+    "class": "execute",
+    "sensitive": 0,
+    "reason": "reviewed"
+  },
+  {
+    "service": "comprehendmedical",
+    "operation": "infer-rx-norm",
+    "class": "execute",
+    "sensitive": 0,
+    "reason": "reviewed"
+  },
+  {
+    "service": "comprehendmedical",
+    "operation": "infer-snomedct",
+    "class": "execute",
+    "sensitive": 0,
+    "reason": "reviewed"
+  },
+  {
+    "service": "configservice",
+    "operation": "deliver-config-snapshot",
+    "class": "execute",
+    "sensitive": 0,
+    "reason": "reviewed"
+  },
+  {
+    "service": "configservice",
+    "operation": "put-aggregation-authorization",
+    "class": "modify",
+    "sensitive": 1,
+    "reason": "reviewed"
+  },
+  {
+    "service": "configservice",
+    "operation": "put-configuration-recorder",
+    "class": "modify",
+    "sensitive": 1,
+    "reason": "reviewed"
+  },
+  {
+    "service": "connect",
+    "operation": "claim-phone-number",
+    "class": "create",
+    "sensitive": 1,
+    "reason": "reviewed"
+  },
+  {
+    "service": "connect",
+    "operation": "deactivate-evaluation-form",
+    "class": "modify",
+    "sensitive": 0,
+    "reason": "reviewed"
+  },
+  {
+    "service": "connect",
+    "operation": "disassociate-instance-storage-config",
+    "class": "modify",
+    "sensitive": 1,
+    "reason": "reviewed"
+  },
+  {
+    "service": "connect",
+    "operation": "dismiss-user-contact",
+    "class": "execute",
+    "sensitive": 0,
+    "reason": "reviewed"
+  },
+  {
+    "service": "connect",
+    "operation": "monitor-contact",
+    "class": "execute",
+    "sensitive": 1,
+    "reason": "reviewed"
+  },
+  {
+    "service": "connect",
+    "operation": "pause-contact",
+    "class": "modify",
+    "sensitive": 0,
+    "reason": "reviewed"
+  },
+  {
+    "service": "connect",
+    "operation": "replicate-instance",
+    "class": "create",
+    "sensitive": 1,
+    "reason": "reviewed"
+  },
+  {
+    "service": "connect",
+    "operation": "stop-contact",
+    "class": "destroy",
+    "sensitive": 1,
+    "reason": "reviewed"
+  },
+  {
+    "service": "connect",
+    "operation": "update-instance-storage-config",
+    "class": "modify",
+    "sensitive": 1,
+    "reason": "reviewed"
+  },
+  {
+    "service": "connect",
+    "operation": "update-security-profile",
+    "class": "modify",
+    "sensitive": 1,
+    "reason": "reviewed"
+  },
+  {
+    "service": "connect",
+    "operation": "update-user-security-profiles",
+    "class": "modify",
+    "sensitive": 1,
+    "reason": "reviewed"
+  },
+  {
+    "service": "connectcampaigns",
+    "operation": "put-dial-request-batch",
+    "class": "execute",
+    "sensitive": 0,
+    "reason": "reviewed"
+  },
+  {
+    "service": "connectcampaigns",
+    "operation": "stop-campaign",
+    "class": "destroy",
+    "sensitive": 1,
+    "reason": "reviewed"
+  },
+  {
+    "service": "connectcampaignsv2",
+    "operation": "put-outbound-request-batch",
+    "class": "execute",
+    "sensitive": 0,
+    "reason": "reviewed"
+  },
+  {
+    "service": "connectcampaignsv2",
+    "operation": "put-profile-outbound-request-batch",
+    "class": "execute",
+    "sensitive": 0,
+    "reason": "reviewed"
+  },
+  {
+    "service": "connectcampaignsv2",
+    "operation": "stop-campaign",
+    "class": "destroy",
+    "sensitive": 1,
+    "reason": "reviewed"
+  },
+  {
+    "service": "connectparticipant",
+    "operation": "create-participant-connection",
+    "class": "create",
+    "sensitive": 1,
+    "reason": "reviewed"
+  },
+  {
+    "service": "connectparticipant",
+    "operation": "get-authentication-url",
+    "class": "read",
+    "sensitive": 1,
+    "reason": "reviewed"
+  },
+  {
+    "service": "customer-profiles",
+    "operation": "stop-recommender",
+    "class": "destroy",
+    "sensitive": 1,
+    "reason": "reviewed"
+  },
+  {
+    "service": "dataexchange",
+    "operation": "create-data-grant",
+    "class": "create",
+    "sensitive": 1,
+    "reason": "reviewed"
+  },
+  {
+    "service": "datapipeline",
+    "operation": "deactivate-pipeline",
+    "class": "destroy",
+    "sensitive": 1,
+    "reason": "reviewed"
+  },
+  {
+    "service": "datapipeline",
+    "operation": "remove-tags",
+    "class": "modify",
+    "sensitive": 0,
+    "reason": "reviewed"
+  },
+  {
+    "service": "datapipeline",
+    "operation": "report-task-progress",
+    "class": "execute",
+    "sensitive": 0,
+    "reason": "reviewed"
+  },
+  {
+    "service": "datapipeline",
+    "operation": "report-task-runner-heartbeat",
+    "class": "execute",
+    "sensitive": 0,
+    "reason": "reviewed"
+  },
+  {
+    "service": "datazone",
+    "operation": "add-policy-grant",
+    "class": "modify",
+    "sensitive": 1,
+    "reason": "reviewed"
+  },
+  {
+    "service": "datazone",
+    "operation": "create-subscription-grant",
+    "class": "create",
+    "sensitive": 1,
+    "reason": "reviewed"
+  },
+  {
+    "service": "datazone",
+    "operation": "get-environment-credentials",
+    "class": "read",
+    "sensitive": 1,
+    "reason": "reviewed"
+  },
+  {
+    "service": "datazone",
+    "operation": "get-iam-portal-login-url",
+    "class": "read",
+    "sensitive": 1,
+    "reason": "reviewed"
+  },
+  {
+    "service": "datazone",
+    "operation": "remove-entity-owner",
+    "class": "modify",
+    "sensitive": 1,
+    "reason": "reviewed"
+  },
+  {
+    "service": "datazone",
+    "operation": "remove-policy-grant",
+    "class": "modify",
+    "sensitive": 1,
+    "reason": "reviewed"
+  },
+  {
+    "service": "devicefarm",
+    "operation": "create-test-grid-url",
+    "class": "create",
+    "sensitive": 1,
+    "reason": "reviewed"
+  },
+  {
+    "service": "devicefarm",
+    "operation": "install-to-remote-access-session",
+    "class": "execute",
+    "sensitive": 0,
+    "reason": "reviewed"
+  },
+  {
+    "service": "devicefarm",
+    "operation": "schedule-run",
+    "class": "execute",
+    "sensitive": 0,
+    "reason": "reviewed"
+  },
+  {
+    "service": "directconnect",
+    "operation": "start-bgp-failover-test",
+    "class": "execute",
+    "sensitive": 1,
+    "reason": "reviewed"
+  },
+  {
+    "service": "discovery",
+    "operation": "delete-tags",
+    "class": "modify",
+    "sensitive": 0,
+    "reason": "reviewed"
+  },
+  {
+    "service": "discovery",
+    "operation": "start-batch-delete-configuration-task",
+    "class": "destroy",
+    "sensitive": 0,
+    "reason": "reviewed"
+  },
+  {
+    "service": "dms",
+    "operation": "reload-replication-tables",
+    "class": "destroy",
+    "sensitive": 1,
+    "reason": "reviewed"
+  },
+  {
+    "service": "dms",
+    "operation": "reload-tables",
+    "class": "destroy",
+    "sensitive": 1,
+    "reason": "reviewed"
+  },
+  {
+    "service": "dms",
+    "operation": "remove-tags-from-resource",
+    "class": "modify",
+    "sensitive": 0,
+    "reason": "reviewed"
+  },
+  {
+    "service": "dms",
+    "operation": "stop-data-migration",
+    "class": "destroy",
+    "sensitive": 1,
+    "reason": "reviewed"
+  },
+  {
+    "service": "dms",
+    "operation": "stop-replication",
+    "class": "destroy",
+    "sensitive": 1,
+    "reason": "reviewed"
+  },
+  {
+    "service": "dms",
+    "operation": "stop-replication-task",
+    "class": "destroy",
+    "sensitive": 1,
+    "reason": "reviewed"
+  },
+  {
+    "service": "docdb",
+    "operation": "remove-source-identifier-from-subscription",
+    "class": "modify",
+    "sensitive": 0,
+    "reason": "reviewed"
+  },
+  {
+    "service": "docdb",
+    "operation": "remove-tags-from-resource",
+    "class": "modify",
+    "sensitive": 0,
+    "reason": "reviewed"
+  },
+  {
+    "service": "docdb-elastic",
+    "operation": "stop-cluster",
+    "class": "destroy",
+    "sensitive": 1,
+    "reason": "reviewed"
+  },
+  {
+    "service": "drs",
+    "operation": "stop-replication",
+    "class": "destroy",
+    "sensitive": 1,
+    "reason": "reviewed"
+  },
+  {
+    "service": "ds",
+    "operation": "connect-directory",
+    "class": "create",
+    "sensitive": 0,
+    "reason": "reviewed"
+  },
+  {
+    "service": "ds",
+    "operation": "create-trust",
+    "class": "create",
+    "sensitive": 1,
+    "reason": "reviewed"
+  },
+  {
+    "service": "ds",
+    "operation": "disable-client-authentication",
+    "class": "modify",
+    "sensitive": 1,
+    "reason": "reviewed"
+  },
+  {
+    "service": "ds",
+    "operation": "disable-ldaps",
+    "class": "modify",
+    "sensitive": 1,
+    "reason": "reviewed"
+  },
+  {
+    "service": "ds",
+    "operation": "disable-radius",
+    "class": "modify",
+    "sensitive": 1,
+    "reason": "reviewed"
+  },
+  {
+    "service": "ds",
+    "operation": "disable-sso",
+    "class": "modify",
+    "sensitive": 1,
+    "reason": "reviewed"
+  },
+  {
+    "service": "ds",
+    "operation": "remove-tags-from-resource",
+    "class": "modify",
+    "sensitive": 0,
+    "reason": "reviewed"
+  },
+  {
+    "service": "ds",
+    "operation": "reset-user-password",
+    "class": "modify",
+    "sensitive": 1,
+    "reason": "reviewed"
+  },
+  {
+    "service": "ds",
+    "operation": "update-trust",
+    "class": "modify",
+    "sensitive": 1,
+    "reason": "reviewed"
+  },
+  {
+    "service": "ds-data",
+    "operation": "disable-user",
+    "class": "modify",
+    "sensitive": 1,
+    "reason": "reviewed"
+  },
+  {
+    "service": "dsql",
+    "operation": "put-cluster-policy",
+    "class": "modify",
+    "sensitive": 1,
+    "reason": "reviewed"
+  },
+  {
+    "service": "dynamodb",
+    "operation": "export-table-to-point-in-time",
+    "class": "execute",
+    "sensitive": 1,
+    "reason": "reviewed"
+  },
+  {
+    "service": "dynamodb",
+    "operation": "transact-get-items",
+    "class": "read",
+    "sensitive": 0,
+    "reason": "reviewed"
+  },
+  {
+    "service": "dynamodb",
+    "operation": "transact-write-items",
+    "class": "modify",
+    "sensitive": 0,
+    "reason": "reviewed"
+  },
+  {
+    "service": "ebs",
+    "operation": "start-snapshot",
+    "class": "create",
+    "sensitive": 0,
+    "reason": "reviewed"
+  },
+  {
+    "service": "ec2",
+    "operation": "allocate-hosts",
+    "class": "create",
+    "sensitive": 1,
+    "reason": "reviewed"
+  },
+  {
+    "service": "ec2",
+    "operation": "bundle-instance",
+    "class": "execute",
+    "sensitive": 0,
+    "reason": "reviewed"
+  },
+  {
+    "service": "ec2",
+    "operation": "cancel-spot-fleet-requests",
+    "class": "modify",
+    "sensitive": 1,
+    "reason": "reviewed"
+  },
+  {
+    "service": "ec2",
+    "operation": "create-capacity-reservation",
+    "class": "create",
+    "sensitive": 1,
+    "reason": "reviewed"
+  },
+  {
+    "service": "ec2",
+    "operation": "create-capacity-reservation-fleet",
+    "class": "create",
+    "sensitive": 1,
+    "reason": "reviewed"
+  },
+  {
+    "service": "ec2",
+    "operation": "create-key-pair",
+    "class": "create",
+    "sensitive": 1,
+    "reason": "reviewed"
+  },
+  {
+    "service": "ec2",
+    "operation": "create-network-interface-permission",
+    "class": "create",
+    "sensitive": 1,
+    "reason": "reviewed"
+  },
+  {
+    "service": "ec2",
+    "operation": "delete-tags",
+    "class": "modify",
+    "sensitive": 0,
+    "reason": "reviewed"
+  },
+  {
+    "service": "ec2",
+    "operation": "deregister-instance-event-notification-attributes",
+    "class": "modify",
+    "sensitive": 0,
+    "reason": "reviewed"
+  },
+  {
+    "service": "ec2",
+    "operation": "disable-image-block-public-access",
+    "class": "modify",
+    "sensitive": 1,
+    "reason": "reviewed"
+  },
+  {
+    "service": "ec2",
+    "operation": "disable-snapshot-block-public-access",
+    "class": "modify",
+    "sensitive": 1,
+    "reason": "reviewed"
+  },
+  {
+    "service": "ec2",
+    "operation": "enable-address-transfer",
+    "class": "modify",
+    "sensitive": 1,
+    "reason": "reviewed"
+  },
+  {
+    "service": "ec2",
+    "operation": "enable-serial-console-access",
+    "class": "modify",
+    "sensitive": 1,
+    "reason": "reviewed"
+  },
+  {
+    "service": "ec2",
+    "operation": "modify-fpga-image-attribute",
+    "class": "modify",
+    "sensitive": 1,
+    "reason": "reviewed"
+  },
+  {
+    "service": "ec2",
+    "operation": "modify-vpc-endpoint-service-permissions",
+    "class": "modify",
+    "sensitive": 1,
+    "reason": "reviewed"
+  },
+  {
+    "service": "ec2",
+    "operation": "monitor-instances",
+    "class": "modify",
+    "sensitive": 0,
+    "reason": "reviewed"
+  },
+  {
+    "service": "ec2",
+    "operation": "report-instance-status",
+    "class": "execute",
+    "sensitive": 0,
+    "reason": "reviewed"
+  },
+  {
+    "service": "ec2",
+    "operation": "send-diagnostic-interrupt",
+    "class": "execute",
+    "sensitive": 1,
+    "reason": "reviewed"
+  },
+  {
+    "service": "ec2",
+    "operation": "unmonitor-instances",
+    "class": "modify",
+    "sensitive": 0,
+    "reason": "reviewed"
+  },
+  {
+    "service": "ec2",
+    "operation": "withdraw-byoip-cidr",
+    "class": "destroy",
+    "sensitive": 1,
+    "reason": "reviewed"
+  },
+  {
+    "service": "ec2-instance-connect",
+    "operation": "send-serial-console-ssh-public-key",
+    "class": "execute",
+    "sensitive": 1,
+    "reason": "reviewed"
+  },
+  {
+    "service": "ec2-instance-connect",
+    "operation": "send-ssh-public-key",
+    "class": "execute",
+    "sensitive": 1,
+    "reason": "reviewed"
+  },
+  {
+    "service": "ecr",
+    "operation": "delete-lifecycle-policy",
+    "class": "destroy",
+    "sensitive": 0,
+    "reason": "reviewed"
+  },
+  {
+    "service": "ecr",
+    "operation": "delete-repository-creation-template",
+    "class": "destroy",
+    "sensitive": 0,
+    "reason": "reviewed"
+  },
+  {
+    "service": "ecr",
+    "operation": "deregister-pull-time-update-exclusion",
+    "class": "modify",
+    "sensitive": 0,
+    "reason": "reviewed"
+  },
+  {
+    "service": "ecr",
+    "operation": "get-download-url-for-layer",
+    "class": "read",
+    "sensitive": 1,
+    "reason": "reviewed"
+  },
+  {
+    "service": "ecr",
+    "operation": "put-lifecycle-policy",
+    "class": "modify",
+    "sensitive": 1,
+    "reason": "reviewed"
+  },
+  {
+    "service": "ecr",
+    "operation": "put-replication-configuration",
+    "class": "modify",
+    "sensitive": 1,
+    "reason": "reviewed"
+  },
+  {
+    "service": "ecs",
+    "operation": "delete-account-setting",
+    "class": "modify",
+    "sensitive": 0,
+    "reason": "reviewed"
+  },
+  {
+    "service": "ecs",
+    "operation": "delete-attributes",
+    "class": "modify",
+    "sensitive": 0,
+    "reason": "reviewed"
+  },
+  {
+    "service": "ecs",
+    "operation": "execute-command",
+    "class": "execute",
+    "sensitive": 1,
+    "reason": "reviewed"
+  },
+  {
+    "service": "ecs",
+    "operation": "stop-service-deployment",
+    "class": "execute",
+    "sensitive": 1,
+    "reason": "reviewed"
+  },
+  {
+    "service": "ecs",
+    "operation": "stop-task",
+    "class": "destroy",
+    "sensitive": 1,
+    "reason": "reviewed"
+  },
+  {
+    "service": "ecs",
+    "operation": "update-container-instances-state",
+    "class": "modify",
+    "sensitive": 1,
+    "reason": "reviewed"
+  },
+  {
+    "service": "efs",
+    "operation": "delete-tags",
+    "class": "modify",
+    "sensitive": 0,
+    "reason": "reviewed"
+  },
+  {
+    "service": "efs",
+    "operation": "put-file-system-policy",
+    "class": "modify",
+    "sensitive": 1,
+    "reason": "reviewed"
+  },
+  {
+    "service": "eks",
+    "operation": "associate-access-policy",
+    "class": "modify",
+    "sensitive": 1,
+    "reason": "reviewed"
+  },
+  {
+    "service": "eks",
+    "operation": "associate-identity-provider-config",
+    "class": "modify",
+    "sensitive": 1,
+    "reason": "reviewed"
+  },
+  {
+    "service": "eks",
+    "operation": "create-access-entry",
+    "class": "create",
+    "sensitive": 1,
+    "reason": "reviewed"
+  },
+  {
+    "service": "eks",
+    "operation": "create-pod-identity-association",
+    "class": "create",
+    "sensitive": 1,
+    "reason": "reviewed"
+  },
+  {
+    "service": "eks",
+    "operation": "disassociate-access-policy",
+    "class": "modify",
+    "sensitive": 1,
+    "reason": "reviewed"
+  },
+  {
+    "service": "eks",
+    "operation": "disassociate-identity-provider-config",
+    "class": "modify",
+    "sensitive": 1,
+    "reason": "reviewed"
+  },
+  {
+    "service": "eks",
+    "operation": "update-access-entry",
+    "class": "modify",
+    "sensitive": 1,
+    "reason": "reviewed"
+  },
+  {
+    "service": "eks",
+    "operation": "update-pod-identity-association",
+    "class": "modify",
+    "sensitive": 1,
+    "reason": "reviewed"
+  },
+  {
+    "service": "elasticache",
+    "operation": "authorize-cache-security-group-ingress",
+    "class": "modify",
+    "sensitive": 1,
+    "reason": "reviewed"
+  },
+  {
+    "service": "elasticache",
+    "operation": "create-user",
+    "class": "create",
+    "sensitive": 1,
+    "reason": "reviewed"
+  },
+  {
+    "service": "elasticache",
+    "operation": "modify-user",
+    "class": "modify",
+    "sensitive": 1,
+    "reason": "reviewed"
+  },
+  {
+    "service": "elasticache",
+    "operation": "rebalance-slots-in-global-replication-group",
+    "class": "modify",
+    "sensitive": 0,
+    "reason": "reviewed"
+  },
+  {
+    "service": "elasticache",
+    "operation": "remove-tags-from-resource",
+    "class": "modify",
+    "sensitive": 0,
+    "reason": "reviewed"
+  },
+  {
+    "service": "elasticache",
+    "operation": "test-failover",
+    "class": "destroy",
+    "sensitive": 1,
+    "reason": "reviewed"
+  },
+  {
+    "service": "elasticbeanstalk",
+    "operation": "compose-environments",
+    "class": "create",
+    "sensitive": 0,
+    "reason": "reviewed"
+  },
+  {
+    "service": "elasticbeanstalk",
+    "operation": "rebuild-environment",
+    "class": "destroy",
+    "sensitive": 1,
+    "reason": "reviewed"
+  },
+  {
+    "service": "elasticbeanstalk",
+    "operation": "swap-environment-cnam-es",
+    "class": "modify",
+    "sensitive": 1,
+    "reason": "reviewed"
+  },
+  {
+    "service": "elb",
+    "operation": "remove-tags",
+    "class": "modify",
+    "sensitive": 0,
+    "reason": "reviewed"
+  },
+  {
+    "service": "elbv2",
+    "operation": "remove-tags",
+    "class": "modify",
+    "sensitive": 0,
+    "reason": "reviewed"
+  },
+  {
+    "service": "elbv2",
+    "operation": "set-security-groups",
+    "class": "modify",
+    "sensitive": 1,
+    "reason": "reviewed"
+  },
+  {
+    "service": "emr",
+    "operation": "get-cluster-session-credentials",
+    "class": "read",
+    "sensitive": 1,
+    "reason": "reviewed"
+  },
+  {
+    "service": "emr",
+    "operation": "get-on-cluster-app-ui-presigned-url",
+    "class": "read",
+    "sensitive": 1,
+    "reason": "reviewed"
+  },
+  {
+    "service": "emr",
+    "operation": "get-persistent-app-ui-presigned-url",
+    "class": "read",
+    "sensitive": 1,
+    "reason": "reviewed"
+  },
+  {
+    "service": "emr",
+    "operation": "put-block-public-access-configuration",
+    "class": "modify",
+    "sensitive": 1,
+    "reason": "reviewed"
+  },
+  {
+    "service": "emr",
+    "operation": "remove-auto-scaling-policy",
+    "class": "modify",
+    "sensitive": 0,
+    "reason": "reviewed"
+  },
+  {
+    "service": "emr",
+    "operation": "remove-auto-termination-policy",
+    "class": "modify",
+    "sensitive": 0,
+    "reason": "reviewed"
+  },
+  {
+    "service": "emr",
+    "operation": "remove-managed-scaling-policy",
+    "class": "modify",
+    "sensitive": 0,
+    "reason": "reviewed"
+  },
+  {
+    "service": "emr",
+    "operation": "remove-tags",
+    "class": "modify",
+    "sensitive": 0,
+    "reason": "reviewed"
+  },
+  {
+    "service": "emr-containers",
+    "operation": "get-managed-endpoint-session-credentials",
+    "class": "read",
+    "sensitive": 1,
+    "reason": "reviewed"
+  },
+  {
+    "service": "emr-serverless",
+    "operation": "stop-application",
+    "class": "destroy",
+    "sensitive": 1,
+    "reason": "reviewed"
+  },
+  {
+    "service": "entityresolution",
+    "operation": "add-policy-statement",
+    "class": "modify",
+    "sensitive": 1,
+    "reason": "reviewed"
+  },
+  {
+    "service": "entityresolution",
+    "operation": "put-policy",
+    "class": "modify",
+    "sensitive": 1,
+    "reason": "reviewed"
+  },
+  {
+    "service": "es",
+    "operation": "authorize-vpc-endpoint-access",
+    "class": "modify",
+    "sensitive": 1,
+    "reason": "reviewed"
+  },
+  {
+    "service": "es",
+    "operation": "remove-tags",
+    "class": "modify",
+    "sensitive": 0,
+    "reason": "reviewed"
+  },
+  {
+    "service": "events",
+    "operation": "disable-rule",
+    "class": "modify",
+    "sensitive": 1,
+    "reason": "reviewed"
+  },
+  {
+    "service": "events",
+    "operation": "put-events",
+    "class": "execute",
+    "sensitive": 0,
+    "reason": "reviewed"
+  },
+  {
+    "service": "events",
+    "operation": "put-partner-events",
+    "class": "execute",
+    "sensitive": 0,
+    "reason": "reviewed"
+  },
+  {
+    "service": "events",
+    "operation": "put-permission",
+    "class": "modify",
+    "sensitive": 1,
+    "reason": "reviewed"
+  },
+  {
+    "service": "finspace",
+    "operation": "get-kx-connection-string",
+    "class": "read",
+    "sensitive": 1,
+    "reason": "reviewed"
+  },
+  {
+    "service": "finspace-data",
+    "operation": "disable-user",
+    "class": "modify",
+    "sensitive": 1,
+    "reason": "reviewed"
+  },
+  {
+    "service": "finspace-data",
+    "operation": "get-external-data-view-access-details",
+    "class": "read",
+    "sensitive": 1,
+    "reason": "reviewed"
+  },
+  {
+    "service": "finspace-data",
+    "operation": "get-programmatic-access-credentials",
+    "class": "read",
+    "sensitive": 1,
+    "reason": "reviewed"
+  },
+  {
+    "service": "finspace-data",
+    "operation": "reset-user-password",
+    "class": "modify",
+    "sensitive": 1,
+    "reason": "reviewed"
+  },
+  {
+    "service": "firehose",
+    "operation": "put-record",
+    "class": "execute",
+    "sensitive": 0,
+    "reason": "reviewed"
+  },
+  {
+    "service": "firehose",
+    "operation": "put-record-batch",
+    "class": "execute",
+    "sensitive": 0,
+    "reason": "reviewed"
+  },
+  {
+    "service": "firehose",
+    "operation": "stop-delivery-stream-encryption",
+    "class": "modify",
+    "sensitive": 1,
+    "reason": "reviewed"
+  },
+  {
+    "service": "fis",
+    "operation": "start-experiment",
+    "class": "execute",
+    "sensitive": 1,
+    "reason": "reviewed"
+  },
+  {
+    "service": "fms",
+    "operation": "associate-admin-account",
+    "class": "modify",
+    "sensitive": 1,
+    "reason": "reviewed"
+  },
+  {
+    "service": "fms",
+    "operation": "put-admin-account",
+    "class": "modify",
+    "sensitive": 1,
+    "reason": "reviewed"
+  },
+  {
+    "service": "fms",
+    "operation": "put-policy",
+    "class": "modify",
+    "sensitive": 1,
+    "reason": "reviewed"
+  },
+  {
+    "service": "freetier",
+    "operation": "upgrade-account-plan",
+    "class": "modify",
+    "sensitive": 1,
+    "reason": "reviewed"
+  },
+  {
+    "service": "fsx",
+    "operation": "copy-snapshot-and-update-volume",
+    "class": "modify",
+    "sensitive": 1,
+    "reason": "reviewed"
+  },
+  {
+    "service": "fsx",
+    "operation": "detach-and-delete-s3-access-point",
+    "class": "destroy",
+    "sensitive": 1,
+    "reason": "reviewed"
+  },
+  {
+    "service": "fsx",
+    "operation": "restore-volume-from-snapshot",
+    "class": "destroy",
+    "sensitive": 1,
+    "reason": "reviewed"
+  },
+  {
+    "service": "gamelift",
+    "operation": "get-compute-access",
+    "class": "read",
+    "sensitive": 1,
+    "reason": "reviewed"
+  },
+  {
+    "service": "gamelift",
+    "operation": "get-compute-auth-token",
+    "class": "read",
+    "sensitive": 1,
+    "reason": "reviewed"
+  },
+  {
+    "service": "gamelift",
+    "operation": "get-instance-access",
+    "class": "read",
+    "sensitive": 1,
+    "reason": "reviewed"
+  },
+  {
+    "service": "gamelift",
+    "operation": "request-upload-credentials",
+    "class": "create",
+    "sensitive": 1,
+    "reason": "reviewed"
+  },
+  {
+    "service": "geo-places",
+    "operation": "autocomplete",
+    "class": "read",
+    "sensitive": 0,
+    "reason": "reviewed"
+  },
+  {
+    "service": "geo-places",
+    "operation": "geocode",
+    "class": "read",
+    "sensitive": 0,
+    "reason": "reviewed"
+  },
+  {
+    "service": "geo-places",
+    "operation": "reverse-geocode",
+    "class": "read",
+    "sensitive": 0,
+    "reason": "reviewed"
+  },
+  {
+    "service": "geo-places",
+    "operation": "suggest",
+    "class": "read",
+    "sensitive": 0,
+    "reason": "reviewed"
+  },
+  {
+    "service": "geo-routes",
+    "operation": "optimize-waypoints",
+    "class": "read",
+    "sensitive": 0,
+    "reason": "reviewed"
+  },
+  {
+    "service": "geo-routes",
+    "operation": "snap-to-roads",
+    "class": "read",
+    "sensitive": 0,
+    "reason": "reviewed"
+  },
+  {
+    "service": "glacier",
+    "operation": "complete-vault-lock",
+    "class": "execute",
+    "sensitive": 1,
+    "reason": "reviewed"
+  },
+  {
+    "service": "glacier",
+    "operation": "delete-vault-notifications",
+    "class": "modify",
+    "sensitive": 0,
+    "reason": "reviewed"
+  },
+  {
+    "service": "glacier",
+    "operation": "remove-tags-from-vault",
+    "class": "modify",
+    "sensitive": 0,
+    "reason": "reviewed"
+  },
+  {
+    "service": "glacier",
+    "operation": "set-vault-access-policy",
+    "class": "modify",
+    "sensitive": 1,
+    "reason": "reviewed"
+  },
+  {
+    "service": "globalaccelerator",
+    "operation": "withdraw-byoip-cidr",
+    "class": "destroy",
+    "sensitive": 1,
+    "reason": "reviewed"
+  },
+  {
+    "service": "glue",
+    "operation": "get-connection",
+    "class": "read",
+    "sensitive": 1,
+    "reason": "reviewed"
+  },
+  {
+    "service": "glue",
+    "operation": "get-connections",
+    "class": "read",
+    "sensitive": 1,
+    "reason": "reviewed"
+  },
+  {
+    "service": "glue",
+    "operation": "remove-schema-version-metadata",
+    "class": "modify",
+    "sensitive": 0,
+    "reason": "reviewed"
+  },
+  {
+    "service": "grafana",
+    "operation": "create-workspace-api-key",
+    "class": "create",
+    "sensitive": 1,
+    "reason": "reviewed"
+  },
+  {
+    "service": "grafana",
+    "operation": "create-workspace-service-account-token",
+    "class": "create",
+    "sensitive": 1,
+    "reason": "reviewed"
+  },
+  {
+    "service": "grafana",
+    "operation": "update-workspace-authentication",
+    "class": "modify",
+    "sensitive": 1,
+    "reason": "reviewed"
+  },
+  {
+    "service": "guardduty",
+    "operation": "decline-invitations",
+    "class": "modify",
+    "sensitive": 0,
+    "reason": "reviewed"
+  },
+  {
+    "service": "guardduty",
+    "operation": "delete-invitations",
+    "class": "modify",
+    "sensitive": 0,
+    "reason": "reviewed"
+  },
+  {
+    "service": "guardduty",
+    "operation": "stop-monitoring-members",
+    "class": "destroy",
+    "sensitive": 1,
+    "reason": "reviewed"
+  },
+  {
+    "service": "guardduty",
+    "operation": "update-detector",
+    "class": "modify",
+    "sensitive": 1,
+    "reason": "reviewed"
+  },
+  {
+    "service": "iam",
+    "operation": "create-access-key",
+    "class": "create",
+    "sensitive": 1,
+    "reason": "reviewed"
+  },
+  {
+    "service": "iam",
+    "operation": "create-login-profile",
+    "class": "create",
+    "sensitive": 1,
+    "reason": "reviewed"
+  },
+  {
+    "service": "iam",
+    "operation": "create-service-specific-credential",
+    "class": "create",
+    "sensitive": 1,
+    "reason": "reviewed"
+  },
+  {
+    "service": "iam",
+    "operation": "create-virtual-mfa-device",
+    "class": "create",
+    "sensitive": 1,
+    "reason": "reviewed"
+  },
+  {
+    "service": "iam",
+    "operation": "disable-organizations-root-credentials-management",
+    "class": "modify",
+    "sensitive": 1,
+    "reason": "reviewed"
+  },
+  {
+    "service": "iam",
+    "operation": "disable-organizations-root-sessions",
+    "class": "modify",
+    "sensitive": 1,
+    "reason": "reviewed"
+  },
+  {
+    "service": "iam",
+    "operation": "disable-outbound-web-identity-federation",
+    "class": "modify",
+    "sensitive": 1,
+    "reason": "reviewed"
+  },
+  {
+    "service": "iam",
+    "operation": "enable-organizations-root-credentials-management",
+    "class": "modify",
+    "sensitive": 1,
+    "reason": "reviewed"
+  },
+  {
+    "service": "iam",
+    "operation": "enable-organizations-root-sessions",
+    "class": "modify",
+    "sensitive": 1,
+    "reason": "reviewed"
+  },
+  {
+    "service": "iam",
+    "operation": "put-role-permissions-boundary",
+    "class": "modify",
+    "sensitive": 1,
+    "reason": "reviewed"
+  },
+  {
+    "service": "iam",
+    "operation": "put-user-permissions-boundary",
+    "class": "modify",
+    "sensitive": 1,
+    "reason": "reviewed"
+  },
+  {
+    "service": "iam",
+    "operation": "reset-service-specific-credential",
+    "class": "modify",
+    "sensitive": 1,
+    "reason": "reviewed"
+  },
+  {
+    "service": "iam",
+    "operation": "resync-mfa-device",
+    "class": "modify",
+    "sensitive": 0,
+    "reason": "reviewed"
+  },
+  {
+    "service": "iam",
+    "operation": "send-delegation-token",
+    "class": "execute",
+    "sensitive": 1,
+    "reason": "reviewed"
+  },
+  {
+    "service": "iam",
+    "operation": "update-access-key",
+    "class": "modify",
+    "sensitive": 1,
+    "reason": "reviewed"
+  },
+  {
+    "service": "iam",
+    "operation": "upload-signing-certificate",
+    "class": "create",
+    "sensitive": 1,
+    "reason": "reviewed"
+  },
+  {
+    "service": "iam",
+    "operation": "upload-ssh-public-key",
+    "class": "create",
+    "sensitive": 1,
+    "reason": "reviewed"
+  },
+  {
+    "service": "imagebuilder",
+    "operation": "delete-lifecycle-policy",
+    "class": "destroy",
+    "sensitive": 0,
+    "reason": "reviewed"
+  },
+  {
+    "service": "imagebuilder",
+    "operation": "put-component-policy",
+    "class": "modify",
+    "sensitive": 1,
+    "reason": "reviewed"
+  },
+  {
+    "service": "imagebuilder",
+    "operation": "put-container-recipe-policy",
+    "class": "modify",
+    "sensitive": 1,
+    "reason": "reviewed"
+  },
+  {
+    "service": "imagebuilder",
+    "operation": "put-image-policy",
+    "class": "modify",
+    "sensitive": 1,
+    "reason": "reviewed"
+  },
+  {
+    "service": "imagebuilder",
+    "operation": "put-image-recipe-policy",
+    "class": "modify",
+    "sensitive": 1,
+    "reason": "reviewed"
+  },
+  {
+    "service": "inspector",
+    "operation": "remove-attributes-from-findings",
+    "class": "modify",
+    "sensitive": 0,
+    "reason": "reviewed"
+  },
+  {
+    "service": "inspector",
+    "operation": "unsubscribe-from-event",
+    "class": "modify",
+    "sensitive": 0,
+    "reason": "reviewed"
+  },
+  {
+    "service": "iot",
+    "operation": "attach-policy",
+    "class": "modify",
+    "sensitive": 1,
+    "reason": "reviewed"
+  },
+  {
+    "service": "iot",
+    "operation": "create-certificate-from-csr",
+    "class": "create",
+    "sensitive": 1,
+    "reason": "reviewed"
+  },
+  {
+    "service": "iot",
+    "operation": "create-keys-and-certificate",
+    "class": "create",
+    "sensitive": 1,
+    "reason": "reviewed"
+  },
+  {
+    "service": "iot",
+    "operation": "create-provisioning-claim",
+    "class": "create",
+    "sensitive": 1,
+    "reason": "reviewed"
+  },
+  {
+    "service": "iot",
+    "operation": "register-ca-certificate",
+    "class": "create",
+    "sensitive": 1,
+    "reason": "reviewed"
+  },
+  {
+    "service": "iot",
+    "operation": "transfer-certificate",
+    "class": "modify",
+    "sensitive": 1,
+    "reason": "reviewed"
+  },
+  {
+    "service": "iot",
+    "operation": "update-security-profile",
+    "class": "modify",
+    "sensitive": 1,
+    "reason": "reviewed"
+  },
+  {
+    "service": "iotanalytics",
+    "operation": "sample-channel-data",
+    "class": "read",
+    "sensitive": 0,
+    "reason": "reviewed"
+  },
+  {
+    "service": "iotevents-data",
+    "operation": "batch-acknowledge-alarm",
+    "class": "execute",
+    "sensitive": 0,
+    "reason": "reviewed"
+  },
+  {
+    "service": "iotevents-data",
+    "operation": "batch-snooze-alarm",
+    "class": "execute",
+    "sensitive": 0,
+    "reason": "reviewed"
+  },
+  {
+    "service": "iotsecuretunneling",
+    "operation": "close-tunnel",
+    "class": "destroy",
+    "sensitive": 0,
+    "reason": "reviewed"
+  },
+  {
+    "service": "iotsecuretunneling",
+    "operation": "open-tunnel",
+    "class": "create",
+    "sensitive": 1,
+    "reason": "reviewed"
+  },
+  {
+    "service": "iotsecuretunneling",
+    "operation": "rotate-tunnel-access-token",
+    "class": "modify",
+    "sensitive": 1,
+    "reason": "reviewed"
+  },
+  {
+    "service": "iotsitewise",
+    "operation": "create-access-policy",
+    "class": "create",
+    "sensitive": 1,
+    "reason": "reviewed"
+  },
+  {
+    "service": "iotsitewise",
+    "operation": "update-access-policy",
+    "class": "modify",
+    "sensitive": 1,
+    "reason": "reviewed"
+  },
+  {
+    "service": "iotthingsgraph",
+    "operation": "deploy-system-instance",
+    "class": "modify",
+    "sensitive": 0,
+    "reason": "reviewed"
+  },
+  {
+    "service": "iotthingsgraph",
+    "operation": "undeploy-system-instance",
+    "class": "destroy",
+    "sensitive": 0,
+    "reason": "reviewed"
+  },
+  {
+    "service": "iotwireless",
+    "operation": "associate-aws-account-with-partner-account",
+    "class": "modify",
+    "sensitive": 1,
+    "reason": "reviewed"
+  },
+  {
+    "service": "ivs",
+    "operation": "batch-get-stream-key",
+    "class": "read",
+    "sensitive": 1,
+    "reason": "reviewed"
+  },
+  {
+    "service": "ivs",
+    "operation": "create-stream-key",
+    "class": "create",
+    "sensitive": 1,
+    "reason": "reviewed"
+  },
+  {
+    "service": "ivs",
+    "operation": "get-stream-key",
+    "class": "read",
+    "sensitive": 1,
+    "reason": "reviewed"
+  },
+  {
+    "service": "ivs",
+    "operation": "stop-stream",
+    "class": "execute",
+    "sensitive": 1,
+    "reason": "reviewed"
+  },
+  {
+    "service": "ivs-realtime",
+    "operation": "create-participant-token",
+    "class": "create",
+    "sensitive": 1,
+    "reason": "reviewed"
+  },
+  {
+    "service": "ivs-realtime",
+    "operation": "create-stage",
+    "class": "create",
+    "sensitive": 1,
+    "reason": "reviewed"
+  },
+  {
+    "service": "ivschat",
+    "operation": "create-chat-token",
+    "class": "create",
+    "sensitive": 1,
+    "reason": "reviewed"
+  },
+  {
+    "service": "kafka",
+    "operation": "batch-associate-scram-secret",
+    "class": "modify",
+    "sensitive": 1,
+    "reason": "reviewed"
+  },
+  {
+    "service": "kafka",
+    "operation": "put-cluster-policy",
+    "class": "modify",
+    "sensitive": 1,
+    "reason": "reviewed"
+  },
+  {
+    "service": "kafka",
+    "operation": "update-connectivity",
+    "class": "modify",
+    "sensitive": 1,
+    "reason": "reviewed"
+  },
+  {
+    "service": "kafka",
+    "operation": "update-security",
+    "class": "modify",
+    "sensitive": 1,
+    "reason": "reviewed"
+  },
+  {
+    "service": "kendra",
+    "operation": "clear-query-suggestions",
+    "class": "destroy",
+    "sensitive": 1,
+    "reason": "reviewed"
+  },
+  {
+    "service": "kendra-ranking",
+    "operation": "rescore",
+    "class": "execute",
+    "sensitive": 0,
+    "reason": "reviewed"
+  },
+  {
+    "service": "kinesis",
+    "operation": "decrease-stream-retention-period",
+    "class": "modify",
+    "sensitive": 1,
+    "reason": "reviewed"
+  },
+  {
+    "service": "kinesis",
+    "operation": "put-record",
+    "class": "execute",
+    "sensitive": 0,
+    "reason": "reviewed"
+  },
+  {
+    "service": "kinesis",
+    "operation": "put-records",
+    "class": "execute",
+    "sensitive": 0,
+    "reason": "reviewed"
+  },
+  {
+    "service": "kinesis",
+    "operation": "remove-tags-from-stream",
+    "class": "modify",
+    "sensitive": 0,
+    "reason": "reviewed"
+  },
+  {
+    "service": "kinesis",
+    "operation": "split-shard",
+    "class": "modify",
+    "sensitive": 0,
+    "reason": "reviewed"
+  },
+  {
+    "service": "kinesis",
+    "operation": "stop-stream-encryption",
+    "class": "modify",
+    "sensitive": 1,
+    "reason": "reviewed"
+  },
+  {
+    "service": "kinesis-video-archived-media",
+    "operation": "get-dash-streaming-session-url",
+    "class": "read",
+    "sensitive": 1,
+    "reason": "reviewed"
+  },
+  {
+    "service": "kinesis-video-archived-media",
+    "operation": "get-hls-streaming-session-url",
+    "class": "read",
+    "sensitive": 1,
+    "reason": "reviewed"
+  },
+  {
+    "service": "kinesis-video-signaling",
+    "operation": "get-ice-server-config",
+    "class": "read",
+    "sensitive": 1,
+    "reason": "reviewed"
+  },
+  {
+    "service": "kinesis-video-webrtc-storage",
+    "operation": "join-storage-session",
+    "class": "execute",
+    "sensitive": 0,
+    "reason": "reviewed"
+  },
+  {
+    "service": "kinesis-video-webrtc-storage",
+    "operation": "join-storage-session-as-viewer",
+    "class": "execute",
+    "sensitive": 0,
+    "reason": "reviewed"
+  },
+  {
+    "service": "kinesisanalytics",
+    "operation": "stop-application",
+    "class": "destroy",
+    "sensitive": 1,
+    "reason": "reviewed"
+  },
+  {
+    "service": "kinesisanalyticsv2",
+    "operation": "create-application-presigned-url",
+    "class": "read",
+    "sensitive": 1,
+    "reason": "reviewed"
+  },
+  {
+    "service": "kinesisanalyticsv2",
+    "operation": "stop-application",
+    "class": "destroy",
+    "sensitive": 1,
+    "reason": "reviewed"
+  },
+  {
+    "service": "kinesisvideo",
+    "operation": "update-data-retention",
+    "class": "modify",
+    "sensitive": 1,
+    "reason": "reviewed"
+  },
+  {
+    "service": "kms",
+    "operation": "connect-custom-key-store",
+    "class": "modify",
+    "sensitive": 0,
+    "reason": "reviewed"
+  },
+  {
+    "service": "kms",
+    "operation": "create-grant",
+    "class": "create",
+    "sensitive": 1,
+    "reason": "reviewed"
+  },
+  {
+    "service": "kms",
+    "operation": "derive-shared-secret",
+    "class": "read",
+    "sensitive": 1,
+    "reason": "reviewed"
+  },
+  {
+    "service": "kms",
+    "operation": "encrypt",
+    "class": "read",
+    "sensitive": 0,
+    "reason": "reviewed"
+  },
+  {
+    "service": "kms",
+    "operation": "replicate-key",
+    "class": "create",
+    "sensitive": 1,
+    "reason": "reviewed"
+  },
+  {
+    "service": "lakeformation",
+    "operation": "batch-grant-permissions",
+    "class": "modify",
+    "sensitive": 1,
+    "reason": "reviewed"
+  },
+  {
+    "service": "lakeformation",
+    "operation": "commit-transaction",
+    "class": "execute",
+    "sensitive": 0,
+    "reason": "reviewed"
+  },
+  {
+    "service": "lakeformation",
+    "operation": "extend-transaction",
+    "class": "execute",
+    "sensitive": 0,
+    "reason": "reviewed"
+  },
+  {
+    "service": "lakeformation",
+    "operation": "get-temporary-glue-partition-credentials",
+    "class": "read",
+    "sensitive": 1,
+    "reason": "reviewed"
+  },
+  {
+    "service": "lakeformation",
+    "operation": "get-temporary-glue-table-credentials",
+    "class": "read",
+    "sensitive": 1,
+    "reason": "reviewed"
+  },
+  {
+    "service": "lakeformation",
+    "operation": "grant-permissions",
+    "class": "modify",
+    "sensitive": 1,
+    "reason": "reviewed"
+  },
+  {
+    "service": "lakeformation",
+    "operation": "remove-lf-tags-from-resource",
+    "class": "modify",
+    "sensitive": 1,
+    "reason": "reviewed"
+  },
+  {
+    "service": "lambda",
+    "operation": "add-layer-version-permission",
+    "class": "modify",
+    "sensitive": 1,
+    "reason": "reviewed"
+  },
+  {
+    "service": "lambda",
+    "operation": "add-permission",
+    "class": "modify",
+    "sensitive": 1,
+    "reason": "reviewed"
+  },
+  {
+    "service": "lambda",
+    "operation": "checkpoint-durable-execution",
+    "class": "execute",
+    "sensitive": 0,
+    "reason": "reviewed"
+  },
+  {
+    "service": "lambda",
+    "operation": "create-function-url-config",
+    "class": "create",
+    "sensitive": 1,
+    "reason": "reviewed"
+  },
+  {
+    "service": "lambda",
+    "operation": "update-function-url-config",
+    "class": "modify",
+    "sensitive": 1,
+    "reason": "reviewed"
+  },
+  {
+    "service": "lexv2-models",
+    "operation": "build-bot-locale",
+    "class": "execute",
+    "sensitive": 0,
+    "reason": "reviewed"
+  },
+  {
+    "service": "lexv2-models",
+    "operation": "create-resource-policy",
+    "class": "create",
+    "sensitive": 1,
+    "reason": "reviewed"
+  },
+  {
+    "service": "lexv2-models",
+    "operation": "create-resource-policy-statement",
+    "class": "create",
+    "sensitive": 1,
+    "reason": "reviewed"
+  },
+  {
+    "service": "lexv2-models",
+    "operation": "get-test-execution-artifacts-url",
+    "class": "read",
+    "sensitive": 1,
+    "reason": "reviewed"
+  },
+  {
+    "service": "lexv2-models",
+    "operation": "update-resource-policy",
+    "class": "modify",
+    "sensitive": 1,
+    "reason": "reviewed"
+  },
+  {
+    "service": "license-manager",
+    "operation": "checkout-borrow-license",
+    "class": "execute",
+    "sensitive": 0,
+    "reason": "reviewed"
+  },
+  {
+    "service": "license-manager",
+    "operation": "checkout-license",
+    "class": "execute",
+    "sensitive": 0,
+    "reason": "reviewed"
+  },
+  {
+    "service": "license-manager",
+    "operation": "create-grant",
+    "class": "create",
+    "sensitive": 1,
+    "reason": "reviewed"
+  },
+  {
+    "service": "license-manager",
+    "operation": "create-token",
+    "class": "create",
+    "sensitive": 1,
+    "reason": "reviewed"
+  },
+  {
+    "service": "license-manager",
+    "operation": "extend-license-consumption",
+    "class": "modify",
+    "sensitive": 0,
+    "reason": "reviewed"
+  },
+  {
+    "service": "license-manager",
+    "operation": "get-access-token",
+    "class": "read",
+    "sensitive": 1,
+    "reason": "reviewed"
+  },
+  {
+    "service": "lightsail",
+    "operation": "close-instance-public-ports",
+    "class": "modify",
+    "sensitive": 0,
+    "reason": "reviewed"
+  },
+  {
+    "service": "lightsail",
+    "operation": "create-bucket-access-key",
+    "class": "create",
+    "sensitive": 1,
+    "reason": "reviewed"
+  },
+  {
+    "service": "lightsail",
+    "operation": "create-container-service-registry-login",
+    "class": "create",
+    "sensitive": 1,
+    "reason": "reviewed"
+  },
+  {
+    "service": "lightsail",
+    "operation": "create-gui-session-access-details",
+    "class": "create",
+    "sensitive": 1,
+    "reason": "reviewed"
+  },
+  {
+    "service": "lightsail",
+    "operation": "create-key-pair",
+    "class": "create",
+    "sensitive": 1,
+    "reason": "reviewed"
+  },
+  {
+    "service": "lightsail",
+    "operation": "download-default-key-pair",
+    "class": "read",
+    "sensitive": 1,
+    "reason": "reviewed"
+  },
+  {
+    "service": "lightsail",
+    "operation": "get-bucket-access-keys",
+    "class": "read",
+    "sensitive": 1,
+    "reason": "reviewed"
+  },
+  {
+    "service": "lightsail",
+    "operation": "get-instance-access-details",
+    "class": "read",
+    "sensitive": 1,
+    "reason": "reviewed"
+  },
+  {
+    "service": "lightsail",
+    "operation": "get-relational-database-master-user-password",
+    "class": "read",
+    "sensitive": 1,
+    "reason": "reviewed"
+  },
+  {
+    "service": "lightsail",
+    "operation": "put-instance-public-ports",
+    "class": "modify",
+    "sensitive": 1,
+    "reason": "reviewed"
+  },
+  {
+    "service": "lightsail",
+    "operation": "stop-instance",
+    "class": "destroy",
+    "sensitive": 1,
+    "reason": "reviewed"
+  },
+  {
+    "service": "lightsail",
+    "operation": "stop-relational-database",
+    "class": "destroy",
+    "sensitive": 1,
+    "reason": "reviewed"
+  },
+  {
+    "service": "lightsail",
+    "operation": "update-bucket",
+    "class": "modify",
+    "sensitive": 1,
+    "reason": "reviewed"
+  },
+  {
+    "service": "location",
+    "operation": "forecast-geofence-events",
+    "class": "read",
+    "sensitive": 0,
+    "reason": "reviewed"
+  },
+  {
+    "service": "logs",
+    "operation": "put-account-policy",
+    "class": "modify",
+    "sensitive": 1,
+    "reason": "reviewed"
+  },
+  {
+    "service": "logs",
+    "operation": "put-data-protection-policy",
+    "class": "modify",
+    "sensitive": 1,
+    "reason": "reviewed"
+  },
+  {
+    "service": "logs",
+    "operation": "put-delivery-destination-policy",
+    "class": "modify",
+    "sensitive": 1,
+    "reason": "reviewed"
+  },
+  {
+    "service": "logs",
+    "operation": "put-destination-policy",
+    "class": "modify",
+    "sensitive": 1,
+    "reason": "reviewed"
+  },
+  {
+    "service": "m2",
+    "operation": "stop-application",
+    "class": "destroy",
+    "sensitive": 1,
+    "reason": "reviewed"
+  },
+  {
+    "service": "machinelearning",
+    "operation": "delete-tags",
+    "class": "modify",
+    "sensitive": 0,
+    "reason": "reviewed"
+  },
+  {
+    "service": "macie2",
+    "operation": "decline-invitations",
+    "class": "modify",
+    "sensitive": 0,
+    "reason": "reviewed"
+  },
+  {
+    "service": "macie2",
+    "operation": "delete-invitations",
+    "class": "modify",
+    "sensitive": 0,
+    "reason": "reviewed"
+  },
+  {
+    "service": "macie2",
+    "operation": "get-sensitive-data-occurrences",
+    "class": "read",
+    "sensitive": 1,
+    "reason": "reviewed"
+  },
+  {
+    "service": "macie2",
+    "operation": "update-reveal-configuration",
+    "class": "modify",
+    "sensitive": 1,
+    "reason": "reviewed"
+  },
+  {
+    "service": "mailmanager",
+    "operation": "start-archive-export",
+    "class": "execute",
+    "sensitive": 1,
+    "reason": "reviewed"
+  },
+  {
+    "service": "managedblockchain",
+    "operation": "create-accessor",
+    "class": "create",
+    "sensitive": 1,
+    "reason": "reviewed"
+  },
+  {
+    "service": "managedblockchain",
+    "operation": "get-accessor",
+    "class": "read",
+    "sensitive": 1,
+    "reason": "reviewed"
+  },
+  {
+    "service": "managedblockchain",
+    "operation": "vote-on-proposal",
+    "class": "execute",
+    "sensitive": 1,
+    "reason": "reviewed"
+  },
+  {
+    "service": "mediaconnect",
+    "operation": "grant-flow-entitlements",
+    "class": "modify",
+    "sensitive": 1,
+    "reason": "reviewed"
+  },
+  {
+    "service": "mediaconnect",
+    "operation": "stop-flow",
+    "class": "destroy",
+    "sensitive": 1,
+    "reason": "reviewed"
+  },
+  {
+    "service": "mediaconvert",
+    "operation": "probe",
+    "class": "read",
+    "sensitive": 0,
+    "reason": "reviewed"
+  },
+  {
+    "service": "medialive",
+    "operation": "batch-stop",
+    "class": "destroy",
+    "sensitive": 1,
+    "reason": "reviewed"
+  },
+  {
+    "service": "medialive",
+    "operation": "delete-tags",
+    "class": "modify",
+    "sensitive": 0,
+    "reason": "reviewed"
+  },
+  {
+    "service": "medialive",
+    "operation": "start-delete-monitor-deployment",
+    "class": "destroy",
+    "sensitive": 0,
+    "reason": "reviewed"
+  },
+  {
+    "service": "medialive",
+    "operation": "stop-channel",
+    "class": "destroy",
+    "sensitive": 1,
+    "reason": "reviewed"
+  },
+  {
+    "service": "medialive",
+    "operation": "update-input-security-group",
+    "class": "modify",
+    "sensitive": 1,
+    "reason": "reviewed"
+  },
+  {
+    "service": "mediapackage",
+    "operation": "describe-channel",
+    "class": "read",
+    "sensitive": 1,
+    "reason": "reviewed"
+  },
+  {
+    "service": "mediapackage",
+    "operation": "list-channels",
+    "class": "read",
+    "sensitive": 1,
+    "reason": "reviewed"
+  },
+  {
+    "service": "mediapackage",
+    "operation": "rotate-channel-credentials",
+    "class": "modify",
+    "sensitive": 1,
+    "reason": "reviewed"
+  },
+  {
+    "service": "mediapackage",
+    "operation": "rotate-ingest-endpoint-credentials",
+    "class": "modify",
+    "sensitive": 1,
+    "reason": "reviewed"
+  },
+  {
+    "service": "mediapackagev2",
+    "operation": "put-channel-policy",
+    "class": "modify",
+    "sensitive": 1,
+    "reason": "reviewed"
+  },
+  {
+    "service": "mediapackagev2",
+    "operation": "put-origin-endpoint-policy",
+    "class": "modify",
+    "sensitive": 1,
+    "reason": "reviewed"
+  },
+  {
+    "service": "mediastore",
+    "operation": "delete-lifecycle-policy",
+    "class": "destroy",
+    "sensitive": 0,
+    "reason": "reviewed"
+  },
+  {
+    "service": "mediastore",
+    "operation": "put-container-policy",
+    "class": "modify",
+    "sensitive": 1,
+    "reason": "reviewed"
+  },
+  {
+    "service": "mediastore",
+    "operation": "put-cors-policy",
+    "class": "modify",
+    "sensitive": 1,
+    "reason": "reviewed"
+  },
+  {
+    "service": "mediastore",
+    "operation": "put-lifecycle-policy",
+    "class": "modify",
+    "sensitive": 1,
+    "reason": "reviewed"
+  },
+  {
+    "service": "mediastore",
+    "operation": "stop-access-logging",
+    "class": "destroy",
+    "sensitive": 1,
+    "reason": "reviewed"
+  },
+  {
+    "service": "mediatailor",
+    "operation": "put-channel-policy",
+    "class": "modify",
+    "sensitive": 1,
+    "reason": "reviewed"
+  },
+  {
+    "service": "mediatailor",
+    "operation": "stop-channel",
+    "class": "destroy",
+    "sensitive": 1,
+    "reason": "reviewed"
+  },
+  {
+    "service": "memorydb",
+    "operation": "create-user",
+    "class": "create",
+    "sensitive": 1,
+    "reason": "reviewed"
+  },
+  {
+    "service": "memorydb",
+    "operation": "update-user",
+    "class": "modify",
+    "sensitive": 1,
+    "reason": "reviewed"
+  },
+  {
+    "service": "meteringmarketplace",
+    "operation": "batch-meter-usage",
+    "class": "execute",
+    "sensitive": 1,
+    "reason": "reviewed"
+  },
+  {
+    "service": "meteringmarketplace",
+    "operation": "meter-usage",
+    "class": "execute",
+    "sensitive": 1,
+    "reason": "reviewed"
+  },
+  {
+    "service": "mgn",
+    "operation": "finalize-cutover",
+    "class": "destroy",
+    "sensitive": 1,
+    "reason": "reviewed"
+  },
+  {
+    "service": "mgn",
+    "operation": "mark-as-archived",
+    "class": "modify",
+    "sensitive": 0,
+    "reason": "reviewed"
+  },
+  {
+    "service": "mgn",
+    "operation": "stop-replication",
+    "class": "destroy",
+    "sensitive": 1,
+    "reason": "reviewed"
+  },
+  {
+    "service": "mpa",
+    "operation": "start-active-approval-team-deletion",
+    "class": "destroy",
+    "sensitive": 1,
+    "reason": "reviewed"
+  },
+  {
+    "service": "mq",
+    "operation": "create-user",
+    "class": "create",
+    "sensitive": 1,
+    "reason": "reviewed"
+  },
+  {
+    "service": "mq",
+    "operation": "delete-tags",
+    "class": "modify",
+    "sensitive": 0,
+    "reason": "reviewed"
+  },
+  {
+    "service": "mq",
+    "operation": "promote",
+    "class": "destroy",
+    "sensitive": 1,
+    "reason": "reviewed"
+  },
+  {
+    "service": "mq",
+    "operation": "update-user",
+    "class": "modify",
+    "sensitive": 1,
+    "reason": "reviewed"
+  },
+  {
+    "service": "mturk",
+    "operation": "approve-assignment",
+    "class": "modify",
+    "sensitive": 1,
+    "reason": "reviewed"
+  },
+  {
+    "service": "mturk",
+    "operation": "create-additional-assignments-for-hit",
+    "class": "create",
+    "sensitive": 1,
+    "reason": "reviewed"
+  },
+  {
+    "service": "mturk",
+    "operation": "create-hit",
+    "class": "create",
+    "sensitive": 1,
+    "reason": "reviewed"
+  },
+  {
+    "service": "mturk",
+    "operation": "create-hit-with-hit-type",
+    "class": "create",
+    "sensitive": 1,
+    "reason": "reviewed"
+  },
+  {
+    "service": "mturk",
+    "operation": "send-bonus",
+    "class": "execute",
+    "sensitive": 1,
+    "reason": "reviewed"
+  },
+  {
+    "service": "mwaa",
+    "operation": "create-cli-token",
+    "class": "create",
+    "sensitive": 1,
+    "reason": "reviewed"
+  },
+  {
+    "service": "mwaa",
+    "operation": "create-web-login-token",
+    "class": "create",
+    "sensitive": 1,
+    "reason": "reviewed"
+  },
+  {
+    "service": "neptune",
+    "operation": "promote-read-replica-db-cluster",
+    "class": "destroy",
+    "sensitive": 1,
+    "reason": "reviewed"
+  },
+  {
+    "service": "neptune",
+    "operation": "remove-source-identifier-from-subscription",
+    "class": "modify",
+    "sensitive": 0,
+    "reason": "reviewed"
+  },
+  {
+    "service": "neptune",
+    "operation": "remove-tags-from-resource",
+    "class": "modify",
+    "sensitive": 0,
+    "reason": "reviewed"
+  },
+  {
+    "service": "neptune-graph",
+    "operation": "reset-graph",
+    "class": "destroy",
+    "sensitive": 1,
+    "reason": "reviewed"
+  },
+  {
+    "service": "neptune-graph",
+    "operation": "stop-graph",
+    "class": "destroy",
+    "sensitive": 1,
+    "reason": "reviewed"
+  },
+  {
+    "service": "neptunedata",
+    "operation": "delete-propertygraph-statistics",
+    "class": "modify",
+    "sensitive": 0,
+    "reason": "reviewed"
+  },
+  {
+    "service": "neptunedata",
+    "operation": "delete-sparql-statistics",
+    "class": "modify",
+    "sensitive": 0,
+    "reason": "reviewed"
+  },
+  {
+    "service": "neptunedata",
+    "operation": "execute-fast-reset",
+    "class": "destroy",
+    "sensitive": 1,
+    "reason": "reviewed"
+  },
+  {
+    "service": "neptunedata",
+    "operation": "manage-propertygraph-statistics",
+    "class": "modify",
+    "sensitive": 0,
+    "reason": "reviewed"
+  },
+  {
+    "service": "neptunedata",
+    "operation": "manage-sparql-statistics",
+    "class": "modify",
+    "sensitive": 0,
+    "reason": "reviewed"
+  },
+  {
+    "service": "network-firewall",
+    "operation": "start-flow-flush",
+    "class": "execute",
+    "sensitive": 1,
+    "reason": "reviewed"
+  },
+  {
+    "service": "networkmanager",
+    "operation": "execute-core-network-change-set",
+    "class": "modify",
+    "sensitive": 0,
+    "reason": "reviewed"
+  },
+  {
+    "service": "networkmanager",
+    "operation": "start-organization-service-access-update",
+    "class": "modify",
+    "sensitive": 1,
+    "reason": "reviewed"
+  },
+  {
+    "service": "notifications",
+    "operation": "disable-notifications-access-for-organization",
+    "class": "modify",
+    "sensitive": 1,
+    "reason": "reviewed"
+  },
+  {
+    "service": "notifications",
+    "operation": "enable-notifications-access-for-organization",
+    "class": "modify",
+    "sensitive": 1,
+    "reason": "reviewed"
+  },
+  {
+    "service": "oam",
+    "operation": "create-link",
+    "class": "create",
+    "sensitive": 1,
+    "reason": "reviewed"
+  },
+  {
+    "service": "oam",
+    "operation": "put-sink-policy",
+    "class": "modify",
+    "sensitive": 1,
+    "reason": "reviewed"
+  },
+  {
+    "service": "odb",
+    "operation": "stop-db-node",
+    "class": "destroy",
+    "sensitive": 1,
+    "reason": "reviewed"
+  },
+  {
+    "service": "omics",
+    "operation": "create-share",
+    "class": "create",
+    "sensitive": 1,
+    "reason": "reviewed"
+  },
+  {
+    "service": "omics",
+    "operation": "put-s3-access-policy",
+    "class": "modify",
+    "sensitive": 1,
+    "reason": "reviewed"
+  },
+  {
+    "service": "opensearch",
+    "operation": "authorize-vpc-endpoint-access",
+    "class": "modify",
+    "sensitive": 1,
+    "reason": "reviewed"
+  },
+  {
+    "service": "opensearch",
+    "operation": "remove-tags",
+    "class": "modify",
+    "sensitive": 0,
+    "reason": "reviewed"
+  },
+  {
+    "service": "opensearchserverless",
+    "operation": "create-access-policy",
+    "class": "create",
+    "sensitive": 1,
+    "reason": "reviewed"
+  },
+  {
+    "service": "opensearchserverless",
+    "operation": "create-security-policy",
+    "class": "create",
+    "sensitive": 1,
+    "reason": "reviewed"
+  },
+  {
+    "service": "opensearchserverless",
+    "operation": "delete-lifecycle-policy",
+    "class": "destroy",
+    "sensitive": 0,
+    "reason": "reviewed"
+  },
+  {
+    "service": "opensearchserverless",
+    "operation": "update-access-policy",
+    "class": "modify",
+    "sensitive": 1,
+    "reason": "reviewed"
+  },
+  {
+    "service": "opensearchserverless",
+    "operation": "update-security-policy",
+    "class": "modify",
+    "sensitive": 1,
+    "reason": "reviewed"
+  },
+  {
+    "service": "organizations",
+    "operation": "accept-handshake",
+    "class": "modify",
+    "sensitive": 1,
+    "reason": "reviewed"
+  },
+  {
+    "service": "organizations",
+    "operation": "attach-policy",
+    "class": "modify",
+    "sensitive": 1,
+    "reason": "reviewed"
+  },
+  {
+    "service": "organizations",
+    "operation": "decline-handshake",
+    "class": "modify",
+    "sensitive": 0,
+    "reason": "reviewed"
+  },
+  {
+    "service": "organizations",
+    "operation": "detach-policy",
+    "class": "modify",
+    "sensitive": 1,
+    "reason": "reviewed"
+  },
+  {
+    "service": "organizations",
+    "operation": "disable-policy-type",
+    "class": "modify",
+    "sensitive": 1,
+    "reason": "reviewed"
+  },
+  {
+    "service": "organizations",
+    "operation": "update-policy",
+    "class": "modify",
+    "sensitive": 1,
+    "reason": "reviewed"
+  },
+  {
+    "service": "outposts",
+    "operation": "create-order",
+    "class": "create",
+    "sensitive": 1,
+    "reason": "reviewed"
+  },
+  {
+    "service": "outposts",
+    "operation": "start-outpost-decommission",
+    "class": "destroy",
+    "sensitive": 1,
+    "reason": "reviewed"
+  },
+  {
+    "service": "panorama",
+    "operation": "provision-device",
+    "class": "create",
+    "sensitive": 1,
+    "reason": "reviewed"
+  },
+  {
+    "service": "partnercentral-benefits",
+    "operation": "amend-benefit-application",
+    "class": "modify",
+    "sensitive": 0,
+    "reason": "reviewed"
+  },
+  {
+    "service": "partnercentral-benefits",
+    "operation": "recall-benefit-application",
+    "class": "modify",
+    "sensitive": 0,
+    "reason": "reviewed"
+  },
+  {
+    "service": "payment-cryptography",
+    "operation": "export-key",
+    "class": "execute",
+    "sensitive": 1,
+    "reason": "reviewed"
+  },
+  {
+    "service": "payment-cryptography",
+    "operation": "stop-key-usage",
+    "class": "destroy",
+    "sensitive": 1,
+    "reason": "reviewed"
+  },
+  {
+    "service": "payment-cryptography-data",
+    "operation": "decrypt-data",
+    "class": "read",
+    "sensitive": 1,
+    "reason": "reviewed"
+  },
+  {
+    "service": "payment-cryptography-data",
+    "operation": "encrypt-data",
+    "class": "read",
+    "sensitive": 0,
+    "reason": "reviewed"
+  },
+  {
+    "service": "pca-connector-scep",
+    "operation": "get-challenge-password",
+    "class": "read",
+    "sensitive": 1,
+    "reason": "reviewed"
+  },
+  {
+    "service": "personalize",
+    "operation": "stop-recommender",
+    "class": "destroy",
+    "sensitive": 1,
+    "reason": "reviewed"
+  },
+  {
+    "service": "pinpoint",
+    "operation": "phone-number-validate",
+    "class": "read",
+    "sensitive": 0,
+    "reason": "reviewed"
+  },
+  {
+    "service": "pinpoint",
+    "operation": "put-events",
+    "class": "execute",
+    "sensitive": 0,
+    "reason": "reviewed"
+  },
+  {
+    "service": "pinpoint-email",
+    "operation": "put-account-sending-attributes",
+    "class": "modify",
+    "sensitive": 1,
+    "reason": "reviewed"
+  },
+  {
+    "service": "pinpoint-sms-voice-v2",
+    "operation": "carrier-lookup",
+    "class": "read",
+    "sensitive": 0,
+    "reason": "reviewed"
+  },
+  {
+    "service": "pinpoint-sms-voice-v2",
+    "operation": "discard-registration-version",
+    "class": "modify",
+    "sensitive": 0,
+    "reason": "reviewed"
+  },
+  {
+    "service": "pinpoint-sms-voice-v2",
+    "operation": "request-phone-number",
+    "class": "create",
+    "sensitive": 1,
+    "reason": "reviewed"
+  },
+  {
+    "service": "pinpoint-sms-voice-v2",
+    "operation": "request-sender-id",
+    "class": "create",
+    "sensitive": 1,
+    "reason": "reviewed"
+  },
+  {
+    "service": "pinpoint-sms-voice-v2",
+    "operation": "set-media-message-spend-limit-override",
+    "class": "modify",
+    "sensitive": 1,
+    "reason": "reviewed"
+  },
+  {
+    "service": "pinpoint-sms-voice-v2",
+    "operation": "set-text-message-spend-limit-override",
+    "class": "modify",
+    "sensitive": 1,
+    "reason": "reviewed"
+  },
+  {
+    "service": "pinpoint-sms-voice-v2",
+    "operation": "set-voice-message-spend-limit-override",
+    "class": "modify",
+    "sensitive": 1,
+    "reason": "reviewed"
+  },
+  {
+    "service": "pipes",
+    "operation": "stop-pipe",
+    "class": "destroy",
+    "sensitive": 1,
+    "reason": "reviewed"
+  },
+  {
+    "service": "qapps",
+    "operation": "update-q-app-permissions",
+    "class": "modify",
+    "sensitive": 1,
+    "reason": "reviewed"
+  },
+  {
+    "service": "qbusiness",
+    "operation": "associate-permission",
+    "class": "modify",
+    "sensitive": 1,
+    "reason": "reviewed"
+  },
+  {
+    "service": "qbusiness",
+    "operation": "chat",
+    "class": "execute",
+    "sensitive": 0,
+    "reason": "reviewed"
+  },
+  {
+    "service": "qbusiness",
+    "operation": "chat-sync",
+    "class": "execute",
+    "sensitive": 0,
+    "reason": "reviewed"
+  },
+  {
+    "service": "qbusiness",
+    "operation": "create-anonymous-web-experience-url",
+    "class": "create",
+    "sensitive": 1,
+    "reason": "reviewed"
+  },
+  {
+    "service": "qbusiness",
+    "operation": "create-subscription",
+    "class": "create",
+    "sensitive": 1,
+    "reason": "reviewed"
+  },
+  {
+    "service": "qconnect",
+    "operation": "deactivate-message-template",
+    "class": "modify",
+    "sensitive": 0,
+    "reason": "reviewed"
+  },
+  {
+    "service": "qconnect",
+    "operation": "remove-assistant-ai-agent",
+    "class": "modify",
+    "sensitive": 0,
+    "reason": "reviewed"
+  },
+  {
+    "service": "qconnect",
+    "operation": "remove-knowledge-base-template-uri",
+    "class": "modify",
+    "sensitive": 0,
+    "reason": "reviewed"
+  },
+  {
+    "service": "quicksight",
+    "operation": "create-iam-policy-assignment",
+    "class": "create",
+    "sensitive": 1,
+    "reason": "reviewed"
+  },
+  {
+    "service": "quicksight",
+    "operation": "generate-embed-url-for-anonymous-user",
+    "class": "execute",
+    "sensitive": 1,
+    "reason": "reviewed"
+  },
+  {
+    "service": "quicksight",
+    "operation": "generate-embed-url-for-registered-user",
+    "class": "execute",
+    "sensitive": 1,
+    "reason": "reviewed"
+  },
+  {
+    "service": "quicksight",
+    "operation": "generate-embed-url-for-registered-user-with-identity",
+    "class": "execute",
+    "sensitive": 1,
+    "reason": "reviewed"
+  },
+  {
+    "service": "quicksight",
+    "operation": "get-dashboard-embed-url",
+    "class": "read",
+    "sensitive": 1,
+    "reason": "reviewed"
+  },
+  {
+    "service": "quicksight",
+    "operation": "get-session-embed-url",
+    "class": "read",
+    "sensitive": 1,
+    "reason": "reviewed"
+  },
+  {
+    "service": "quicksight",
+    "operation": "update-action-connector-permissions",
+    "class": "modify",
+    "sensitive": 1,
+    "reason": "reviewed"
+  },
+  {
+    "service": "quicksight",
+    "operation": "update-analysis-permissions",
+    "class": "modify",
+    "sensitive": 1,
+    "reason": "reviewed"
+  },
+  {
+    "service": "quicksight",
+    "operation": "update-application-with-token-exchange-grant",
+    "class": "modify",
+    "sensitive": 1,
+    "reason": "reviewed"
+  },
+  {
+    "service": "quicksight",
+    "operation": "update-dashboard-permissions",
+    "class": "modify",
+    "sensitive": 1,
+    "reason": "reviewed"
+  },
+  {
+    "service": "quicksight",
+    "operation": "update-data-set-permissions",
+    "class": "modify",
+    "sensitive": 1,
+    "reason": "reviewed"
+  },
+  {
+    "service": "quicksight",
+    "operation": "update-data-source-permissions",
+    "class": "modify",
+    "sensitive": 1,
+    "reason": "reviewed"
+  },
+  {
+    "service": "quicksight",
+    "operation": "update-flow-permissions",
+    "class": "modify",
+    "sensitive": 1,
+    "reason": "reviewed"
+  },
+  {
+    "service": "quicksight",
+    "operation": "update-folder-permissions",
+    "class": "modify",
+    "sensitive": 1,
+    "reason": "reviewed"
+  },
+  {
+    "service": "quicksight",
+    "operation": "update-iam-policy-assignment",
+    "class": "modify",
+    "sensitive": 1,
+    "reason": "reviewed"
+  },
+  {
+    "service": "quicksight",
+    "operation": "update-public-sharing-settings",
+    "class": "modify",
+    "sensitive": 1,
+    "reason": "reviewed"
+  },
+  {
+    "service": "quicksight",
+    "operation": "update-template-permissions",
+    "class": "modify",
+    "sensitive": 1,
+    "reason": "reviewed"
+  },
+  {
+    "service": "quicksight",
+    "operation": "update-theme-permissions",
+    "class": "modify",
+    "sensitive": 1,
+    "reason": "reviewed"
+  },
+  {
+    "service": "quicksight",
+    "operation": "update-topic-permissions",
+    "class": "modify",
+    "sensitive": 1,
+    "reason": "reviewed"
+  },
+  {
+    "service": "ram",
+    "operation": "associate-resource-share",
+    "class": "modify",
+    "sensitive": 1,
+    "reason": "reviewed"
+  },
+  {
+    "service": "ram",
+    "operation": "create-resource-share",
+    "class": "create",
+    "sensitive": 1,
+    "reason": "reviewed"
+  },
+  {
+    "service": "ram",
+    "operation": "update-resource-share",
+    "class": "modify",
+    "sensitive": 1,
+    "reason": "reviewed"
+  },
+  {
+    "service": "rds",
+    "operation": "authorize-db-security-group-ingress",
+    "class": "modify",
+    "sensitive": 1,
+    "reason": "reviewed"
+  },
+  {
+    "service": "rds",
+    "operation": "backtrack-db-cluster",
+    "class": "destroy",
+    "sensitive": 1,
+    "reason": "reviewed"
+  },
+  {
+    "service": "rds",
+    "operation": "promote-read-replica",
+    "class": "destroy",
+    "sensitive": 1,
+    "reason": "reviewed"
+  },
+  {
+    "service": "rds",
+    "operation": "promote-read-replica-db-cluster",
+    "class": "destroy",
+    "sensitive": 1,
+    "reason": "reviewed"
+  },
+  {
+    "service": "rds",
+    "operation": "remove-source-identifier-from-subscription",
+    "class": "modify",
+    "sensitive": 0,
+    "reason": "reviewed"
+  },
+  {
+    "service": "rds",
+    "operation": "remove-tags-from-resource",
+    "class": "modify",
+    "sensitive": 0,
+    "reason": "reviewed"
+  },
+  {
+    "service": "rds",
+    "operation": "start-export-task",
+    "class": "execute",
+    "sensitive": 1,
+    "reason": "reviewed"
+  },
+  {
+    "service": "rds",
+    "operation": "stop-activity-stream",
+    "class": "destroy",
+    "sensitive": 1,
+    "reason": "reviewed"
+  },
+  {
+    "service": "rds-data",
+    "operation": "begin-transaction",
+    "class": "execute",
+    "sensitive": 0,
+    "reason": "reviewed"
+  },
+  {
+    "service": "rds-data",
+    "operation": "commit-transaction",
+    "class": "execute",
+    "sensitive": 0,
+    "reason": "reviewed"
+  },
+  {
+    "service": "rds-data",
+    "operation": "rollback-transaction",
+    "class": "execute",
+    "sensitive": 0,
+    "reason": "reviewed"
+  },
+  {
+    "service": "redshift",
+    "operation": "authorize-cluster-security-group-ingress",
+    "class": "modify",
+    "sensitive": 1,
+    "reason": "reviewed"
+  },
+  {
+    "service": "redshift",
+    "operation": "authorize-data-share",
+    "class": "modify",
+    "sensitive": 1,
+    "reason": "reviewed"
+  },
+  {
+    "service": "redshift",
+    "operation": "authorize-endpoint-access",
+    "class": "modify",
+    "sensitive": 1,
+    "reason": "reviewed"
+  },
+  {
+    "service": "redshift",
+    "operation": "authorize-snapshot-access",
+    "class": "modify",
+    "sensitive": 1,
+    "reason": "reviewed"
+  },
+  {
+    "service": "redshift",
+    "operation": "delete-tags",
+    "class": "modify",
+    "sensitive": 0,
+    "reason": "reviewed"
+  },
+  {
+    "service": "redshift",
+    "operation": "get-identity-center-auth-token",
+    "class": "read",
+    "sensitive": 1,
+    "reason": "reviewed"
+  },
+  {
+    "service": "redshift",
+    "operation": "pause-cluster",
+    "class": "destroy",
+    "sensitive": 1,
+    "reason": "reviewed"
+  },
+  {
+    "service": "redshift-serverless",
+    "operation": "create-reservation",
+    "class": "create",
+    "sensitive": 1,
+    "reason": "reviewed"
+  },
+  {
+    "service": "redshift-serverless",
+    "operation": "get-credentials",
+    "class": "read",
+    "sensitive": 1,
+    "reason": "reviewed"
+  },
+  {
+    "service": "rekognition",
+    "operation": "distribute-dataset-entries",
+    "class": "modify",
+    "sensitive": 0,
+    "reason": "reviewed"
+  },
+  {
+    "service": "rekognition",
+    "operation": "put-project-policy",
+    "class": "modify",
+    "sensitive": 1,
+    "reason": "reviewed"
+  },
+  {
+    "service": "rekognition",
+    "operation": "stop-project-version",
+    "class": "destroy",
+    "sensitive": 1,
+    "reason": "reviewed"
+  },
+  {
+    "service": "resiliencehub",
+    "operation": "remove-draft-app-version-resource-mappings",
+    "class": "modify",
+    "sensitive": 0,
+    "reason": "reviewed"
+  },
+  {
+    "service": "resource-groups",
+    "operation": "group-resources",
+    "class": "modify",
+    "sensitive": 0,
+    "reason": "reviewed"
+  },
+  {
+    "service": "resource-groups",
+    "operation": "ungroup-resources",
+    "class": "modify",
+    "sensitive": 0,
+    "reason": "reviewed"
+  },
+  {
+    "service": "rolesanywhere",
+    "operation": "create-trust-anchor",
+    "class": "create",
+    "sensitive": 1,
+    "reason": "reviewed"
+  },
+  {
+    "service": "rolesanywhere",
+    "operation": "disable-crl",
+    "class": "modify",
+    "sensitive": 1,
+    "reason": "reviewed"
+  },
+  {
+    "service": "rolesanywhere",
+    "operation": "disable-profile",
+    "class": "modify",
+    "sensitive": 1,
+    "reason": "reviewed"
+  },
+  {
+    "service": "rolesanywhere",
+    "operation": "disable-trust-anchor",
+    "class": "modify",
+    "sensitive": 1,
+    "reason": "reviewed"
+  },
+  {
+    "service": "rolesanywhere",
+    "operation": "update-trust-anchor",
+    "class": "modify",
+    "sensitive": 1,
+    "reason": "reviewed"
+  },
+  {
+    "service": "route53",
+    "operation": "create-vpc-association-authorization",
+    "class": "create",
+    "sensitive": 1,
+    "reason": "reviewed"
+  },
+  {
+    "service": "route53",
+    "operation": "disable-hosted-zone-dnssec",
+    "class": "modify",
+    "sensitive": 1,
+    "reason": "reviewed"
+  },
+  {
+    "service": "route53",
+    "operation": "test-dns-answer",
+    "class": "read",
+    "sensitive": 0,
+    "reason": "reviewed"
+  },
+  {
+    "service": "route53-recovery-cluster",
+    "operation": "update-routing-control-state",
+    "class": "modify",
+    "sensitive": 1,
+    "reason": "reviewed"
+  },
+  {
+    "service": "route53-recovery-cluster",
+    "operation": "update-routing-control-states",
+    "class": "modify",
+    "sensitive": 1,
+    "reason": "reviewed"
+  },
+  {
+    "service": "route53-recovery-readiness",
+    "operation": "create-cross-account-authorization",
+    "class": "create",
+    "sensitive": 1,
+    "reason": "reviewed"
+  },
+  {
+    "service": "route53domains",
+    "operation": "delete-tags-for-domain",
+    "class": "modify",
+    "sensitive": 0,
+    "reason": "reviewed"
+  },
+  {
+    "service": "route53domains",
+    "operation": "disable-domain-transfer-lock",
+    "class": "modify",
+    "sensitive": 1,
+    "reason": "reviewed"
+  },
+  {
+    "service": "route53domains",
+    "operation": "push-domain",
+    "class": "destroy",
+    "sensitive": 1,
+    "reason": "reviewed"
+  },
+  {
+    "service": "route53domains",
+    "operation": "register-domain",
+    "class": "create",
+    "sensitive": 1,
+    "reason": "reviewed"
+  },
+  {
+    "service": "route53domains",
+    "operation": "renew-domain",
+    "class": "create",
+    "sensitive": 1,
+    "reason": "reviewed"
+  },
+  {
+    "service": "route53domains",
+    "operation": "retrieve-domain-auth-code",
+    "class": "read",
+    "sensitive": 1,
+    "reason": "reviewed"
+  },
+  {
+    "service": "route53domains",
+    "operation": "transfer-domain",
+    "class": "modify",
+    "sensitive": 1,
+    "reason": "reviewed"
+  },
+  {
+    "service": "route53domains",
+    "operation": "transfer-domain-to-another-aws-account",
+    "class": "modify",
+    "sensitive": 1,
+    "reason": "reviewed"
+  },
+  {
+    "service": "route53globalresolver",
+    "operation": "create-access-token",
+    "class": "create",
+    "sensitive": 1,
+    "reason": "reviewed"
+  },
+  {
+    "service": "route53globalresolver",
+    "operation": "get-access-token",
+    "class": "read",
+    "sensitive": 1,
+    "reason": "reviewed"
+  },
+  {
+    "service": "route53resolver",
+    "operation": "put-firewall-rule-group-policy",
+    "class": "modify",
+    "sensitive": 1,
+    "reason": "reviewed"
+  },
+  {
+    "service": "route53resolver",
+    "operation": "put-resolver-query-log-config-policy",
+    "class": "modify",
+    "sensitive": 1,
+    "reason": "reviewed"
+  },
+  {
+    "service": "route53resolver",
+    "operation": "put-resolver-rule-policy",
+    "class": "modify",
+    "sensitive": 1,
+    "reason": "reviewed"
+  },
+  {
+    "service": "s3api",
+    "operation": "create-session",
+    "class": "read",
+    "sensitive": 1,
+    "reason": "reviewed"
+  },
+  {
+    "service": "s3api",
+    "operation": "delete-bucket-analytics-configuration",
+    "class": "modify",
+    "sensitive": 0,
+    "reason": "reviewed"
+  },
+  {
+    "service": "s3api",
+    "operation": "delete-bucket-intelligent-tiering-configuration",
+    "class": "modify",
+    "sensitive": 0,
+    "reason": "reviewed"
+  },
+  {
+    "service": "s3api",
+    "operation": "delete-bucket-inventory-configuration",
+    "class": "modify",
+    "sensitive": 0,
+    "reason": "reviewed"
+  },
+  {
+    "service": "s3api",
+    "operation": "delete-bucket-metrics-configuration",
+    "class": "modify",
+    "sensitive": 0,
+    "reason": "reviewed"
+  },
+  {
+    "service": "s3api",
+    "operation": "delete-bucket-tagging",
+    "class": "modify",
+    "sensitive": 0,
+    "reason": "reviewed"
+  },
+  {
+    "service": "s3api",
+    "operation": "put-bucket-lifecycle",
+    "class": "modify",
+    "sensitive": 1,
+    "reason": "reviewed"
+  },
+  {
+    "service": "s3api",
+    "operation": "put-bucket-lifecycle-configuration",
+    "class": "modify",
+    "sensitive": 1,
+    "reason": "reviewed"
+  },
+  {
+    "service": "s3api",
+    "operation": "put-bucket-website",
+    "class": "modify",
+    "sensitive": 1,
+    "reason": "reviewed"
+  },
+  {
+    "service": "s3api",
+    "operation": "put-object-lock-configuration",
+    "class": "modify",
+    "sensitive": 1,
+    "reason": "reviewed"
+  },
+  {
+    "service": "s3api",
+    "operation": "put-object-retention",
+    "class": "modify",
+    "sensitive": 1,
+    "reason": "reviewed"
+  },
+  {
+    "service": "s3control",
+    "operation": "create-access-grant",
+    "class": "create",
+    "sensitive": 1,
+    "reason": "reviewed"
+  },
+  {
+    "service": "s3control",
+    "operation": "create-job",
+    "class": "create",
+    "sensitive": 1,
+    "reason": "reviewed"
+  },
+  {
+    "service": "s3control",
+    "operation": "delete-bucket-tagging",
+    "class": "modify",
+    "sensitive": 0,
+    "reason": "reviewed"
+  },
+  {
+    "service": "s3control",
+    "operation": "delete-job-tagging",
+    "class": "modify",
+    "sensitive": 0,
+    "reason": "reviewed"
+  },
+  {
+    "service": "s3control",
+    "operation": "delete-storage-lens-configuration-tagging",
+    "class": "modify",
+    "sensitive": 0,
+    "reason": "reviewed"
+  },
+  {
+    "service": "s3control",
+    "operation": "get-data-access",
+    "class": "read",
+    "sensitive": 1,
+    "reason": "reviewed"
+  },
+  {
+    "service": "s3control",
+    "operation": "put-access-grants-instance-resource-policy",
+    "class": "modify",
+    "sensitive": 1,
+    "reason": "reviewed"
+  },
+  {
+    "service": "s3control",
+    "operation": "put-access-point-policy",
+    "class": "modify",
+    "sensitive": 1,
+    "reason": "reviewed"
+  },
+  {
+    "service": "s3control",
+    "operation": "put-access-point-policy-for-object-lambda",
+    "class": "modify",
+    "sensitive": 1,
+    "reason": "reviewed"
+  },
+  {
+    "service": "s3control",
+    "operation": "put-bucket-lifecycle-configuration",
+    "class": "modify",
+    "sensitive": 1,
+    "reason": "reviewed"
+  },
+  {
+    "service": "s3control",
+    "operation": "put-multi-region-access-point-policy",
+    "class": "modify",
+    "sensitive": 1,
+    "reason": "reviewed"
+  },
+  {
+    "service": "s3control",
+    "operation": "submit-multi-region-access-point-routes",
+    "class": "execute",
+    "sensitive": 1,
+    "reason": "reviewed"
+  },
+  {
+    "service": "s3tables",
+    "operation": "delete-table-bucket-metrics-configuration",
+    "class": "modify",
+    "sensitive": 0,
+    "reason": "reviewed"
+  },
+  {
+    "service": "s3tables",
+    "operation": "put-table-bucket-policy",
+    "class": "modify",
+    "sensitive": 1,
+    "reason": "reviewed"
+  },
+  {
+    "service": "s3tables",
+    "operation": "put-table-policy",
+    "class": "modify",
+    "sensitive": 1,
+    "reason": "reviewed"
+  },
+  {
+    "service": "s3tables",
+    "operation": "put-table-record-expiration-configuration",
+    "class": "modify",
+    "sensitive": 1,
+    "reason": "reviewed"
+  },
+  {
+    "service": "s3vectors",
+    "operation": "put-vector-bucket-policy",
+    "class": "modify",
+    "sensitive": 1,
+    "reason": "reviewed"
+  },
+  {
+    "service": "sagemaker",
+    "operation": "create-hub-content-presigned-urls",
+    "class": "create",
+    "sensitive": 1,
+    "reason": "reviewed"
+  },
+  {
+    "service": "sagemaker",
+    "operation": "create-partner-app-presigned-url",
+    "class": "create",
+    "sensitive": 1,
+    "reason": "reviewed"
+  },
+  {
+    "service": "sagemaker",
+    "operation": "create-presigned-domain-url",
+    "class": "create",
+    "sensitive": 1,
+    "reason": "reviewed"
+  },
+  {
+    "service": "sagemaker",
+    "operation": "create-presigned-mlflow-app-url",
+    "class": "create",
+    "sensitive": 1,
+    "reason": "reviewed"
+  },
+  {
+    "service": "sagemaker",
+    "operation": "create-presigned-mlflow-tracking-server-url",
+    "class": "create",
+    "sensitive": 1,
+    "reason": "reviewed"
+  },
+  {
+    "service": "sagemaker",
+    "operation": "create-presigned-notebook-instance-url",
+    "class": "create",
+    "sensitive": 1,
+    "reason": "reviewed"
+  },
+  {
+    "service": "sagemaker",
+    "operation": "delete-tags",
+    "class": "modify",
+    "sensitive": 0,
+    "reason": "reviewed"
+  },
+  {
+    "service": "sagemaker",
+    "operation": "put-model-package-group-policy",
+    "class": "modify",
+    "sensitive": 1,
+    "reason": "reviewed"
+  },
+  {
+    "service": "savingsplans",
+    "operation": "create-savings-plan",
+    "class": "create",
+    "sensitive": 1,
+    "reason": "reviewed"
+  },
+  {
+    "service": "savingsplans",
+    "operation": "return-savings-plan",
+    "class": "destroy",
+    "sensitive": 1,
+    "reason": "reviewed"
+  },
+  {
+    "service": "sdb",
+    "operation": "domain-metadata",
+    "class": "read",
+    "sensitive": 0,
+    "reason": "reviewed"
+  },
+  {
+    "service": "security-ir",
+    "operation": "close-case",
+    "class": "modify",
+    "sensitive": 0,
+    "reason": "reviewed"
+  },
+  {
+    "service": "security-ir",
+    "operation": "create-membership",
+    "class": "create",
+    "sensitive": 1,
+    "reason": "reviewed"
+  },
+  {
+    "service": "securityhub",
+    "operation": "batch-disable-standards",
+    "class": "modify",
+    "sensitive": 1,
+    "reason": "reviewed"
+  },
+  {
+    "service": "securityhub",
+    "operation": "decline-invitations",
+    "class": "modify",
+    "sensitive": 0,
+    "reason": "reviewed"
+  },
+  {
+    "service": "securityhub",
+    "operation": "delete-invitations",
+    "class": "modify",
+    "sensitive": 0,
+    "reason": "reviewed"
+  },
+  {
+    "service": "securityhub",
+    "operation": "start-configuration-policy-disassociation",
+    "class": "modify",
+    "sensitive": 1,
+    "reason": "reviewed"
+  },
+  {
+    "service": "serverlessrepo",
+    "operation": "put-application-policy",
+    "class": "modify",
+    "sensitive": 1,
+    "reason": "reviewed"
+  },
+  {
+    "service": "serverlessrepo",
+    "operation": "unshare-application",
+    "class": "modify",
+    "sensitive": 0,
+    "reason": "reviewed"
+  },
+  {
+    "service": "servicecatalog",
+    "operation": "create-portfolio-share",
+    "class": "create",
+    "sensitive": 1,
+    "reason": "reviewed"
+  },
+  {
+    "service": "servicecatalog",
+    "operation": "update-portfolio-share",
+    "class": "modify",
+    "sensitive": 1,
+    "reason": "reviewed"
+  },
+  {
+    "service": "servicecatalog-appregistry",
+    "operation": "sync-resource",
+    "class": "modify",
+    "sensitive": 0,
+    "reason": "reviewed"
+  },
+  {
+    "service": "ses",
+    "operation": "put-identity-policy",
+    "class": "modify",
+    "sensitive": 1,
+    "reason": "reviewed"
+  },
+  {
+    "service": "ses",
+    "operation": "reorder-receipt-rule-set",
+    "class": "modify",
+    "sensitive": 0,
+    "reason": "reviewed"
+  },
+  {
+    "service": "ses",
+    "operation": "set-active-receipt-rule-set",
+    "class": "modify",
+    "sensitive": 1,
+    "reason": "reviewed"
+  },
+  {
+    "service": "ses",
+    "operation": "update-account-sending-enabled",
+    "class": "modify",
+    "sensitive": 1,
+    "reason": "reviewed"
+  },
+  {
+    "service": "sesv2",
+    "operation": "create-email-identity-policy",
+    "class": "create",
+    "sensitive": 1,
+    "reason": "reviewed"
+  },
+  {
+    "service": "sesv2",
+    "operation": "put-account-sending-attributes",
+    "class": "modify",
+    "sensitive": 1,
+    "reason": "reviewed"
+  },
+  {
+    "service": "sesv2",
+    "operation": "update-email-identity-policy",
+    "class": "modify",
+    "sensitive": 1,
+    "reason": "reviewed"
+  },
+  {
+    "service": "shield",
+    "operation": "associate-drt-log-bucket",
+    "class": "modify",
+    "sensitive": 1,
+    "reason": "reviewed"
+  },
+  {
+    "service": "shield",
+    "operation": "associate-drt-role",
+    "class": "modify",
+    "sensitive": 1,
+    "reason": "reviewed"
+  },
+  {
+    "service": "shield",
+    "operation": "create-subscription",
+    "class": "create",
+    "sensitive": 1,
+    "reason": "reviewed"
+  },
+  {
+    "service": "signer",
+    "operation": "add-profile-permission",
+    "class": "modify",
+    "sensitive": 1,
+    "reason": "reviewed"
+  },
+  {
+    "service": "signin",
+    "operation": "create-o-auth2-token",
+    "class": "create",
+    "sensitive": 1,
+    "reason": "reviewed"
+  },
+  {
+    "service": "snow-device-management",
+    "operation": "create-task",
+    "class": "create",
+    "sensitive": 1,
+    "reason": "reviewed"
+  },
+  {
+    "service": "snowball",
+    "operation": "create-cluster",
+    "class": "create",
+    "sensitive": 1,
+    "reason": "reviewed"
+  },
+  {
+    "service": "snowball",
+    "operation": "create-job",
+    "class": "create",
+    "sensitive": 1,
+    "reason": "reviewed"
+  },
+  {
+    "service": "snowball",
+    "operation": "create-long-term-pricing",
+    "class": "create",
+    "sensitive": 1,
+    "reason": "reviewed"
+  },
+  {
+    "service": "snowball",
+    "operation": "get-job-manifest",
+    "class": "read",
+    "sensitive": 1,
+    "reason": "reviewed"
+  },
+  {
+    "service": "snowball",
+    "operation": "get-job-unlock-code",
+    "class": "read",
+    "sensitive": 1,
+    "reason": "reviewed"
+  },
+  {
+    "service": "sns",
+    "operation": "add-permission",
+    "class": "modify",
+    "sensitive": 1,
+    "reason": "reviewed"
+  },
+  {
+    "service": "sns",
+    "operation": "put-data-protection-policy",
+    "class": "modify",
+    "sensitive": 1,
+    "reason": "reviewed"
+  },
+  {
+    "service": "sns",
+    "operation": "set-topic-attributes",
+    "class": "modify",
+    "sensitive": 1,
+    "reason": "reviewed"
+  },
+  {
+    "service": "sns",
+    "operation": "subscribe",
+    "class": "create",
+    "sensitive": 1,
+    "reason": "reviewed"
+  },
+  {
+    "service": "socialmessaging",
+    "operation": "disassociate-whats-app-business-account",
+    "class": "modify",
+    "sensitive": 1,
+    "reason": "reviewed"
+  },
+  {
+    "service": "sqs",
+    "operation": "add-permission",
+    "class": "modify",
+    "sensitive": 1,
+    "reason": "reviewed"
+  },
+  {
+    "service": "sqs",
+    "operation": "receive-message",
+    "class": "execute",
+    "sensitive": 0,
+    "reason": "reviewed"
+  },
+  {
+    "service": "sqs",
+    "operation": "set-queue-attributes",
+    "class": "modify",
+    "sensitive": 1,
+    "reason": "reviewed"
+  },
+  {
+    "service": "ssm",
+    "operation": "get-access-token",
+    "class": "read",
+    "sensitive": 1,
+    "reason": "reviewed"
+  },
+  {
+    "service": "ssm",
+    "operation": "label-parameter-version",
+    "class": "modify",
+    "sensitive": 0,
+    "reason": "reviewed"
+  },
+  {
+    "service": "ssm",
+    "operation": "modify-document-permission",
+    "class": "modify",
+    "sensitive": 1,
+    "reason": "reviewed"
+  },
+  {
+    "service": "ssm",
+    "operation": "remove-tags-from-resource",
+    "class": "modify",
+    "sensitive": 0,
+    "reason": "reviewed"
+  },
+  {
+    "service": "ssm",
+    "operation": "resume-session",
+    "class": "modify",
+    "sensitive": 1,
+    "reason": "reviewed"
+  },
+  {
+    "service": "ssm",
+    "operation": "send-command",
+    "class": "execute",
+    "sensitive": 1,
+    "reason": "reviewed"
+  },
+  {
+    "service": "ssm",
+    "operation": "start-session",
+    "class": "execute",
+    "sensitive": 1,
+    "reason": "reviewed"
+  },
+  {
+    "service": "ssm",
+    "operation": "unlabel-parameter-version",
+    "class": "modify",
+    "sensitive": 0,
+    "reason": "reviewed"
+  },
+  {
+    "service": "ssm-contacts",
+    "operation": "put-contact-policy",
+    "class": "modify",
+    "sensitive": 1,
+    "reason": "reviewed"
+  },
+  {
+    "service": "ssm-sap",
+    "operation": "put-resource-permission",
+    "class": "modify",
+    "sensitive": 1,
+    "reason": "reviewed"
+  },
+  {
+    "service": "ssm-sap",
+    "operation": "stop-application",
+    "class": "destroy",
+    "sensitive": 1,
+    "reason": "reviewed"
+  },
+  {
+    "service": "sso",
+    "operation": "login",
+    "class": "read",
+    "sensitive": 1,
+    "reason": "reviewed"
+  },
+  {
+    "service": "sso-admin",
+    "operation": "attach-customer-managed-policy-reference-to-permission-set",
+    "class": "modify",
+    "sensitive": 1,
+    "reason": "reviewed"
+  },
+  {
+    "service": "sso-admin",
+    "operation": "attach-managed-policy-to-permission-set",
+    "class": "modify",
+    "sensitive": 1,
+    "reason": "reviewed"
+  },
+  {
+    "service": "sso-admin",
+    "operation": "create-account-assignment",
+    "class": "create",
+    "sensitive": 1,
+    "reason": "reviewed"
+  },
+  {
+    "service": "sso-admin",
+    "operation": "put-inline-policy-to-permission-set",
+    "class": "modify",
+    "sensitive": 1,
+    "reason": "reviewed"
+  },
+  {
+    "service": "sso-admin",
+    "operation": "put-permissions-boundary-to-permission-set",
+    "class": "modify",
+    "sensitive": 1,
+    "reason": "reviewed"
+  },
+  {
+    "service": "sso-oidc",
+    "operation": "create-token",
+    "class": "read",
+    "sensitive": 1,
+    "reason": "reviewed"
+  },
+  {
+    "service": "sso-oidc",
+    "operation": "create-token-with-iam",
+    "class": "read",
+    "sensitive": 1,
+    "reason": "reviewed"
+  },
+  {
+    "service": "sso-oidc",
+    "operation": "register-client",
+    "class": "create",
+    "sensitive": 1,
+    "reason": "reviewed"
+  },
+  {
+    "service": "stepfunctions",
+    "operation": "get-activity-task",
+    "class": "execute",
+    "sensitive": 0,
+    "reason": "reviewed"
+  },
+  {
+    "service": "stepfunctions",
+    "operation": "stop-execution",
+    "class": "destroy",
+    "sensitive": 1,
+    "reason": "reviewed"
+  },
+  {
+    "service": "storagegateway",
+    "operation": "delete-bandwidth-rate-limit",
+    "class": "modify",
+    "sensitive": 0,
+    "reason": "reviewed"
+  },
+  {
+    "service": "storagegateway",
+    "operation": "delete-cache-report",
+    "class": "modify",
+    "sensitive": 0,
+    "reason": "reviewed"
+  },
+  {
+    "service": "storagegateway",
+    "operation": "describe-chap-credentials",
+    "class": "read",
+    "sensitive": 1,
+    "reason": "reviewed"
+  },
+  {
+    "service": "storagegateway",
+    "operation": "disable-gateway",
+    "class": "destroy",
+    "sensitive": 1,
+    "reason": "reviewed"
+  },
+  {
+    "service": "storagegateway",
+    "operation": "remove-tags-from-resource",
+    "class": "modify",
+    "sensitive": 0,
+    "reason": "reviewed"
+  },
+  {
+    "service": "storagegateway",
+    "operation": "reset-cache",
+    "class": "destroy",
+    "sensitive": 1,
+    "reason": "reviewed"
+  },
+  {
+    "service": "storagegateway",
+    "operation": "retrieve-tape-archive",
+    "class": "execute",
+    "sensitive": 0,
+    "reason": "reviewed"
+  },
+  {
+    "service": "storagegateway",
+    "operation": "retrieve-tape-recovery-point",
+    "class": "execute",
+    "sensitive": 0,
+    "reason": "reviewed"
+  },
+  {
+    "service": "storagegateway",
+    "operation": "set-local-console-password",
+    "class": "modify",
+    "sensitive": 1,
+    "reason": "reviewed"
+  },
+  {
+    "service": "storagegateway",
+    "operation": "set-smb-guest-password",
+    "class": "modify",
+    "sensitive": 1,
+    "reason": "reviewed"
+  },
+  {
+    "service": "storagegateway",
+    "operation": "shutdown-gateway",
+    "class": "destroy",
+    "sensitive": 1,
+    "reason": "reviewed"
+  },
+  {
+    "service": "storagegateway",
+    "operation": "update-chap-credentials",
+    "class": "modify",
+    "sensitive": 1,
+    "reason": "reviewed"
+  },
+  {
+    "service": "storagegateway",
+    "operation": "update-gateway-software-now",
+    "class": "modify",
+    "sensitive": 1,
+    "reason": "reviewed"
+  },
+  {
+    "service": "sts",
+    "operation": "decode-authorization-message",
+    "class": "read",
+    "sensitive": 0,
+    "reason": "reviewed"
+  },
+  {
+    "service": "sts",
+    "operation": "get-delegated-access-token",
+    "class": "read",
+    "sensitive": 1,
+    "reason": "reviewed"
+  },
+  {
+    "service": "sts",
+    "operation": "get-web-identity-token",
+    "class": "read",
+    "sensitive": 1,
+    "reason": "reviewed"
+  },
+  {
+    "service": "support",
+    "operation": "resolve-case",
+    "class": "modify",
+    "sensitive": 0,
+    "reason": "reviewed"
+  },
+  {
+    "service": "swf",
+    "operation": "record-activity-task-heartbeat",
+    "class": "execute",
+    "sensitive": 0,
+    "reason": "reviewed"
+  },
+  {
+    "service": "swf",
+    "operation": "request-cancel-workflow-execution",
+    "class": "execute",
+    "sensitive": 1,
+    "reason": "reviewed"
+  },
+  {
+    "service": "swf",
+    "operation": "undeprecate-activity-type",
+    "class": "modify",
+    "sensitive": 0,
+    "reason": "reviewed"
+  },
+  {
+    "service": "swf",
+    "operation": "undeprecate-domain",
+    "class": "modify",
+    "sensitive": 0,
+    "reason": "reviewed"
+  },
+  {
+    "service": "swf",
+    "operation": "undeprecate-workflow-type",
+    "class": "modify",
+    "sensitive": 0,
+    "reason": "reviewed"
+  },
+  {
+    "service": "timestream-query",
+    "operation": "prepare-query",
+    "class": "read",
+    "sensitive": 0,
+    "reason": "reviewed"
+  },
+  {
+    "service": "tnb",
+    "operation": "instantiate-sol-network-instance",
+    "class": "create",
+    "sensitive": 0,
+    "reason": "reviewed"
+  },
+  {
+    "service": "transfer",
+    "operation": "import-ssh-public-key",
+    "class": "create",
+    "sensitive": 1,
+    "reason": "reviewed"
+  },
+  {
+    "service": "transfer",
+    "operation": "start-remote-delete",
+    "class": "destroy",
+    "sensitive": 0,
+    "reason": "reviewed"
+  },
+  {
+    "service": "transfer",
+    "operation": "stop-server",
+    "class": "destroy",
+    "sensitive": 1,
+    "reason": "reviewed"
+  },
+  {
+    "service": "verifiedpermissions",
+    "operation": "update-policy",
+    "class": "modify",
+    "sensitive": 1,
+    "reason": "reviewed"
+  },
+  {
+    "service": "voice-id",
+    "operation": "opt-out-speaker",
+    "class": "modify",
+    "sensitive": 0,
+    "reason": "reviewed"
+  },
+  {
+    "service": "vpc-lattice",
+    "operation": "put-auth-policy",
+    "class": "modify",
+    "sensitive": 1,
+    "reason": "reviewed"
+  },
+  {
+    "service": "vpc-lattice",
+    "operation": "update-service-network",
+    "class": "modify",
+    "sensitive": 1,
+    "reason": "reviewed"
+  },
+  {
+    "service": "waf",
+    "operation": "put-permission-policy",
+    "class": "modify",
+    "sensitive": 1,
+    "reason": "reviewed"
+  },
+  {
+    "service": "waf-regional",
+    "operation": "disassociate-web-acl",
+    "class": "modify",
+    "sensitive": 1,
+    "reason": "reviewed"
+  },
+  {
+    "service": "waf-regional",
+    "operation": "put-permission-policy",
+    "class": "modify",
+    "sensitive": 1,
+    "reason": "reviewed"
+  },
+  {
+    "service": "wafv2",
+    "operation": "disassociate-web-acl",
+    "class": "modify",
+    "sensitive": 1,
+    "reason": "reviewed"
+  },
+  {
+    "service": "wafv2",
+    "operation": "put-permission-policy",
+    "class": "modify",
+    "sensitive": 1,
+    "reason": "reviewed"
+  },
+  {
+    "service": "wellarchitected",
+    "operation": "create-lens-share",
+    "class": "create",
+    "sensitive": 1,
+    "reason": "reviewed"
+  },
+  {
+    "service": "wellarchitected",
+    "operation": "create-profile-share",
+    "class": "create",
+    "sensitive": 1,
+    "reason": "reviewed"
+  },
+  {
+    "service": "wellarchitected",
+    "operation": "create-template-share",
+    "class": "create",
+    "sensitive": 1,
+    "reason": "reviewed"
+  },
+  {
+    "service": "wellarchitected",
+    "operation": "create-workload-share",
+    "class": "create",
+    "sensitive": 1,
+    "reason": "reviewed"
+  },
+  {
+    "service": "wisdom",
+    "operation": "remove-knowledge-base-template-uri",
+    "class": "modify",
+    "sensitive": 0,
+    "reason": "reviewed"
+  },
+  {
+    "service": "workdocs",
+    "operation": "add-resource-permissions",
+    "class": "modify",
+    "sensitive": 1,
+    "reason": "reviewed"
+  },
+  {
+    "service": "workmail",
+    "operation": "put-access-control-rule",
+    "class": "modify",
+    "sensitive": 1,
+    "reason": "reviewed"
+  },
+  {
+    "service": "workmail",
+    "operation": "put-identity-provider-configuration",
+    "class": "modify",
+    "sensitive": 1,
+    "reason": "reviewed"
+  },
+  {
+    "service": "workmail",
+    "operation": "put-mailbox-permissions",
+    "class": "modify",
+    "sensitive": 1,
+    "reason": "reviewed"
+  },
+  {
+    "service": "workmail",
+    "operation": "reset-password",
+    "class": "modify",
+    "sensitive": 1,
+    "reason": "reviewed"
+  },
+  {
+    "service": "workmail",
+    "operation": "start-mailbox-export-job",
+    "class": "execute",
+    "sensitive": 1,
+    "reason": "reviewed"
+  },
+  {
+    "service": "workspaces",
+    "operation": "authorize-ip-rules",
+    "class": "modify",
+    "sensitive": 1,
+    "reason": "reviewed"
+  },
+  {
+    "service": "workspaces",
+    "operation": "delete-tags",
+    "class": "modify",
+    "sensitive": 0,
+    "reason": "reviewed"
+  },
+  {
+    "service": "workspaces",
+    "operation": "deploy-workspace-applications",
+    "class": "modify",
+    "sensitive": 0,
+    "reason": "reviewed"
+  },
+  {
+    "service": "workspaces",
+    "operation": "rebuild-workspaces",
+    "class": "destroy",
+    "sensitive": 1,
+    "reason": "reviewed"
+  },
+  {
+    "service": "workspaces",
+    "operation": "stop-workspaces",
+    "class": "destroy",
+    "sensitive": 1,
+    "reason": "reviewed"
+  },
+  {
+    "service": "workspaces",
+    "operation": "update-connection-alias-permission",
+    "class": "modify",
+    "sensitive": 1,
+    "reason": "reviewed"
+  },
+  {
+    "service": "workspaces",
+    "operation": "update-workspace-image-permission",
+    "class": "modify",
+    "sensitive": 1,
+    "reason": "reviewed"
+  }
+]

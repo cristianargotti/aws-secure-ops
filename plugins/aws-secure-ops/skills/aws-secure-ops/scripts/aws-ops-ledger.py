@@ -84,8 +84,14 @@ def load_entries(path: Path):
 def parse_ts(value):
     if not isinstance(value, str):
         return None
+    # datetime.fromisoformat rejects a trailing 'Z' before Python 3.11, and the
+    # gate writes timestamps with .isoformat() which can end in 'Z'/'+00:00';
+    # normalize 'Z' so parsing works on the 3.8+ the doctor supports.
+    iso = value
+    if iso.endswith(("Z", "z")):
+        iso = iso[:-1] + "+00:00"
     try:
-        dt = datetime.fromisoformat(value)
+        dt = datetime.fromisoformat(iso)
     except ValueError:
         return None
     # Coerce a naive timestamp (a hand-crafted or foreign ledger line with no
@@ -100,7 +106,9 @@ def fmt_ts(value) -> str:
     dt = parse_ts(value)
     if dt is None:
         return str(value) if value else "????-??-??T??:??:??"
-    return dt.strftime("%Y-%m-%d %H:%M:%SZ")
+    # Convert to UTC before formatting so a non-UTC-offset entry is not printed
+    # at its wall-clock time mislabeled with a 'Z'.
+    return dt.astimezone(timezone.utc).strftime("%Y-%m-%d %H:%M:%SZ")
 
 
 def fmt_entry(e: dict) -> str:
@@ -249,8 +257,11 @@ def cmd_reconcile(entries):
     print()
 
     for stamp, s in recent:
-        first = s["first"] or datetime.now(timezone.utc)
-        last = s["last"] or datetime.now(timezone.utc)
+        # Normalize to UTC before building the CloudTrail window: a non-UTC
+        # offset formatted with a literal 'Z' would point the lookup at the
+        # wrong hour and miss the events.
+        first = (s["first"] or datetime.now(timezone.utc)).astimezone(timezone.utc)
+        last = (s["last"] or datetime.now(timezone.utc)).astimezone(timezone.utc)
         # Small buffer around the ledger window for clock skew and delivery.
         start = (first - timedelta(minutes=5)).strftime("%Y-%m-%dT%H:%M:%SZ")
         end = (last + timedelta(minutes=20)).strftime("%Y-%m-%dT%H:%M:%SZ")
