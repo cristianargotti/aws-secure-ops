@@ -337,10 +337,10 @@ PUBLIC_GRANT = re.compile(
 # A resource/trust policy body sourced from a file the gate cannot read.
 # Matches --policy, --policy-document, --assume-role-policy-document, ... but
 # not value-bearing cousins like --policy-arn or --policy-name.
-POLICY_FILE = re.compile(r"--(?:[a-z]+-)*policy(?:-document)?[= ]\s*[\"']?file://")
+POLICY_FILE = re.compile(r"--(?:[a-z]+-)*policy(?:-document)?[=\s]\s*[\"']?file://")
 
 # Skeleton parameters sourced from a file the gate cannot read.
-CLI_INPUT_FILE = re.compile(r"--cli-input-(?:json|yaml)[= ]\s*[\"']?file://")
+CLI_INPUT_FILE = re.compile(r"--cli-input-(?:json|yaml)[=\s]\s*[\"']?file://")
 
 CLASS_RANK = {"read": 0, "execute": 1, "create": 2, "modify": 2, "destroy": 3}
 
@@ -993,7 +993,8 @@ def main():
 
                 # Markers inside tag values (audit-visible)
                 for m in re.finditer(
-                    r"--(?:tags|tag-specifications|tagging)[= ]((?:\"[^\"]*\"|'[^']*'|\S)+)",
+                    r"--(?:tags|tag-specifications|tagging)[=\s]\s*"
+                    r"((?:\"[^\"]*\"|'[^']*'|\S)+)",
                     seg,
                 ):
                     tagval = m.group(1)
@@ -1031,7 +1032,7 @@ def main():
                                 rec,
                             )
 
-                m = re.search(r"--endpoint-url[= ](\S+)", seg)
+                m = re.search(r"--endpoint-url[=\s]\s*(\S+)", seg)
                 if m:
                     url = m.group(1).strip("'\"")
                     host = re.sub(r"^https?://", "", url).split("/")[0].split(":")[0]

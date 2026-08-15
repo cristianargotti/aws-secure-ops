@@ -14598,7 +14598,7 @@ s3,mv,modify,1,1,0,custom,curated
 s3,presign,read,1,0,0,custom,curated
 s3,rb,destroy,1,0,0,custom,curated
 s3,rm,destroy,1,1,0,custom,curated
-s3,sync,modify,1,1,0,custom,curated
+s3,sync,modify,0,1,0,custom,curated
 s3,website,modify,1,0,0,custom,curated
 s3api,abort-multipart-upload,modify,0,0,0,model,prefix
 s3api,complete-multipart-upload,execute,0,0,0,model,prefix

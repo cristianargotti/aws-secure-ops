@@ -486,7 +486,9 @@ CUSTOM_ROWS = [
     ("s3", "mb", "create", 0, 0, 0),
     ("s3", "cp", "modify", 0, 1, 0),
     ("s3", "mv", "modify", 1, 1, 0),
-    ("s3", "sync", "modify", 1, 1, 0),  # --delete makes it destructive
+    ("s3", "sync", "modify", 0, 1, 0),  # plain sync is a modify like cp; the
+    # gate escalates `sync --delete` to destroy at flag time, so the row itself
+    # is not sensitive (a plain sync no longer asks spuriously).
     ("s3", "rm", "destroy", 1, 1, 0),
     ("s3", "rb", "destroy", 1, 0, 0),
     ("s3", "website", "modify", 1, 0, 0),
@@ -998,6 +1000,10 @@ def main():
         class_totals[r[2]] = class_totals.get(r[2], 0) + 1
     sensitive_ops = sum(1 for r in rows if str(r[3]) == "1")
     reviewed_rows = sum(1 for r in rows if r[6] == "review")
+    # Count unknown-verb rows on the FINAL set (rule column), not the model pass:
+    # a correction/custom overlay can resolve a model "unknown", so this reports
+    # how many operations still fall through to the conservative default.
+    unknown = sum(1 for r in rows if r[7] == "unknown")
 
     with (out / "inventory.csv").open("w", newline="") as fh:
         w = csv.writer(fh)
