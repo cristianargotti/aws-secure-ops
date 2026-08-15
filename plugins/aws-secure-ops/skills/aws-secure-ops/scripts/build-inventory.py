@@ -486,7 +486,9 @@ CUSTOM_ROWS = [
     ("s3", "mb", "create", 0, 0, 0),
     ("s3", "cp", "modify", 0, 1, 0),
     ("s3", "mv", "modify", 1, 1, 0),
-    ("s3", "sync", "modify", 1, 1, 0),  # --delete makes it destructive
+    ("s3", "sync", "modify", 0, 1, 0),  # plain sync is a modify like cp; the
+    # gate escalates `sync --delete` to destroy at flag time, so the row itself
+    # is not sensitive (a plain sync no longer asks spuriously).
     ("s3", "rm", "destroy", 1, 1, 0),
     ("s3", "rb", "destroy", 1, 0, 0),
     ("s3", "website", "modify", 1, 0, 0),
@@ -496,14 +498,38 @@ CUSTOM_ROWS = [
     ("eks", "get-token", "read", 1, 0, 0),
     ("eks", "update-kubeconfig", "modify", 0, 0, 0),
     ("rds", "generate-db-auth-token", "read", 1, 0, 0),
-    ("ssm", "start-session", "execute", 0, 0, 0),
+    ("ssm", "start-session", "execute", 1, 0, 0),  # interactive shell: sensitive
     ("cloudformation", "deploy", "modify", 0, 0, 0),
-    ("cloudformation", "package", "read", 0, 0, 0),
+    ("cloudformation", "package", "execute", 0, 0, 0),  # uploads artifacts
     ("cloudfront", "sign", "read", 1, 0, 0),
     ("configure", "export-credentials", "read", 1, 0, 0),
-    ("sso", "login", "read", 0, 0, 0),
+    ("sso", "login", "read", 1, 0, 0),  # mints cached SSO credentials: sensitive
     ("sso", "logout", "read", 0, 0, 0),
+    ("logs", "tail", "read", 0, 0, 0),  # v2 CLI live log tail: a pure read
 ]
+
+
+def load_corrections(path):
+    """Return {(service, operation): (class, sensitive)} from a corrections JSON
+    (a list of {service, operation, class, sensitive} objects). A missing or
+    unreadable file yields no corrections -- a model-only build, which is
+    clearly less strict, so corrections.json belongs in the repo beside the CSV.
+    """
+    try:
+        data = json.loads(Path(path).read_text(encoding="utf-8"))
+    except (OSError, ValueError):
+        return {}
+    valid = {"read", "execute", "create", "modify", "destroy"}
+    out = {}
+    for c in data if isinstance(data, list) else []:
+        if not (isinstance(c, dict) and {"service", "operation", "class"} <= set(c)):
+            continue
+        cls = str(c["class"]).strip().lower()
+        if cls not in valid:
+            continue
+        sens = 1 if int(c.get("sensitive", 0)) else 0
+        out[(str(c["service"]).strip(), str(c["operation"]).strip())] = (cls, sens)
+    return out
 
 
 # --------------------------------------------------------------------------
@@ -931,12 +957,64 @@ def main():
             per_service[cli_service] = per_service.get(cli_service, 0) + 1
             class_totals[cls] = class_totals.get(cls, 0) + 1
 
+    # CUSTOM_ROWS are authoritative overrides, not appends: a customization that
+    # shares a key with a modeled operation REPLACES it (custom wins), so a
+    # rebuild never emits a duplicate (service, operation) key.
+    row_map = {(r[0], r[1]): r for r in rows}
     for svc, opn, cls, sens, dry, pag in CUSTOM_ROWS:
-        rows.append((svc, opn, cls, sens, dry, pag, "custom", "curated"))
-        per_service[svc] = per_service.get(svc, 0) + 1
-        class_totals[cls] = class_totals.get(cls, 0) + 1
+        row_map[(svc, opn)] = (svc, opn, cls, sens, dry, pag, "custom", "curated")
 
-    rows.sort()
+    # Re-apply the reviewed corrections layer so a rebuild does not silently
+    # revert the human review the shipped inventory carries. corrections.json
+    # lives beside the CSV (the out dir); fall back to the copy in the skill.
+    corr_path = out / "corrections.json"
+    if not corr_path.is_file():
+        corr_path = (
+            Path(__file__).resolve().parent.parent
+            / "references"
+            / "inventory"
+            / "corrections.json"
+        )
+    corrections = load_corrections(corr_path)
+    # A key must live in exactly one authoritative layer. If it were in both
+    # CUSTOM_ROWS and corrections, the corrections overlay would silently win and
+    # the CUSTOM_ROWS value would be dead -- a maintenance trap. Fail the build.
+    overlap = sorted(set(corrections) & {(r[0], r[1]) for r in CUSTOM_ROWS})
+    if overlap:
+        sys.exit(
+            "build-inventory: keys are in BOTH CUSTOM_ROWS and corrections.json "
+            "(remove from one): " + ", ".join(f"{s} {o}" for s, o in overlap)
+        )
+    for (svc, opn), (cls, sens) in corrections.items():
+        base = row_map.get((svc, opn))
+        if base is None:
+            continue  # a correction for an operation this CLI does not have
+        row_map[(svc, opn)] = (
+            svc,
+            opn,
+            cls,
+            sens,
+            base[4],
+            base[5],
+            "review",
+            "reviewed",
+        )
+
+    rows = sorted(row_map.values())
+
+    # Recompute every aggregate from the FINAL rows: overrides and corrections
+    # change the class/sensitive distribution, so the model-loop tallies are stale.
+    per_service, class_totals = {}, {}
+    for r in rows:
+        per_service[r[0]] = per_service.get(r[0], 0) + 1
+        class_totals[r[2]] = class_totals.get(r[2], 0) + 1
+    sensitive_ops = sum(1 for r in rows if str(r[3]) == "1")
+    reviewed_rows = sum(1 for r in rows if r[6] == "review")
+    # Count unknown-verb rows on the FINAL set (rule column), not the model pass:
+    # a correction/custom overlay can resolve a model "unknown", so this reports
+    # how many operations still fall through to the conservative default.
+    unknown = sum(1 for r in rows if r[7] == "unknown")
+
     with (out / "inventory.csv").open("w", newline="") as fh:
         w = csv.writer(fh)
         w.writerow(
@@ -972,6 +1050,8 @@ def main():
         "class_totals": dict(sorted(class_totals.items())),
         "unknown_verb_operations": unknown,
         "domain_sizes": {d: len(s) for d, s in domains.items()},
+        "sensitive_operations": sensitive_ops,
+        "reviewed_rows": reviewed_rows,
     }
     (out / "summary.json").write_text(json.dumps(summary, indent=2) + "\n")
     print(json.dumps(summary, indent=2))

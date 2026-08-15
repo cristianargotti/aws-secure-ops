@@ -24,8 +24,12 @@ decision is ever loosened):
      the gate stricter: it never grants the personal-profile exemption, which
      requires an explicit --profile / inline assignment on the invocation.
   2. aws invocations nested inside command substitution ($(...) and
-     backticks) are extracted and classified like any other invocation, so a
-     mutation cannot hide inside a quoted argument.
+     backticks), process substitution (<(...) / >(...)), and the common inline
+     shell wrappers (bash -c / sh -c '<script>', including attached -c'...',
+     -o mode -c, and here-strings) are extracted transitively and classified
+     like any other invocation. This covers the common forms, not every
+     conceivable wrapper -- genuinely novel obfuscation remains a documented
+     residual (see references/threat-model.md).
   3. A mutating command that sources its input from --cli-input-json /
      --cli-input-yaml file://... escalates to ask: the gate cannot inspect
      the file, so the operator confirms its contents match the stated intent.
@@ -329,16 +333,16 @@ BRAND_TOKENS = ("claude", "anthropic", "openai", "chatgpt", "copilot", "gemini")
 # Public principal groups: a grant to either is a world-exposure boundary.
 PUBLIC_GRANT = re.compile(
     r"global/(?:AllUsers|AuthenticatedUsers)\b"
-    r"|--grant[a-z-]*[= ][^;|&]*\b(?:AllUsers|AuthenticatedUsers)\b"
+    r"|--grant[a-z-]*[=\s][^;|&]*\b(?:AllUsers|AuthenticatedUsers)\b"
 )
 
 # A resource/trust policy body sourced from a file the gate cannot read.
 # Matches --policy, --policy-document, --assume-role-policy-document, ... but
 # not value-bearing cousins like --policy-arn or --policy-name.
-POLICY_FILE = re.compile(r"--(?:[a-z]+-)*policy(?:-document)?[= ]\s*[\"']?file://")
+POLICY_FILE = re.compile(r"--(?:[a-z]+-)*policy(?:-document)?[=\s]\s*[\"']?file://")
 
 # Skeleton parameters sourced from a file the gate cannot read.
-CLI_INPUT_FILE = re.compile(r"--cli-input-(?:json|yaml)[= ]\s*[\"']?file://")
+CLI_INPUT_FILE = re.compile(r"--cli-input-(?:json|yaml)[=\s]\s*[\"']?file://")
 
 CLASS_RANK = {"read": 0, "execute": 1, "create": 2, "modify": 2, "destroy": 3}
 
@@ -476,7 +480,10 @@ def parse_invocation(tokens, start):
     stamp = None
     for t in tokens[:start]:
         if t.startswith(STAMP_VAR + "="):
-            stamp = t.split("=", 1)[1].strip("'\"")
+            # Strip whitespace as well as quotes: a stamp of only spaces is not
+            # a purpose stamp, and must fall through to the unstamped-mutation
+            # deny rather than passing as a truthy value.
+            stamp = t.split("=", 1)[1].strip().strip("'\"").strip()
         m = re.match(r"AWS_PROFILE=(\S+)", t)
         if m:
             profile = m.group(1).strip("'\"")
@@ -511,6 +518,34 @@ def parse_invocation(tokens, start):
     return service, op, profile, stamp
 
 
+# A resource-NAME flag the operator uses to name something they create:
+# --name, --stack-name, --function-name, --role-name, --bucket, ... Deliberately
+# limited to --name / *-name / --bucket so a marker in a name the operator is
+# ASSIGNING is caught (hard prohibition #7) without scanning every id-like flag.
+NAME_FLAG = re.compile(r"^--(?:name|bucket|[a-z][a-z0-9-]*-name)$")
+
+
+def name_flag_values(tokens, start):
+    """Values of resource-name flags on the invocation beginning at tokens[start]
+    (--flag=value and --flag value both handled), so a tool/automation marker in
+    a name is caught like one in a tag value."""
+    vals = []
+    i = start + 1
+    while i < len(tokens):
+        t = tokens[i]
+        if t in ("&&", "||", ";", "|"):
+            break
+        if t.startswith("--"):
+            flag, sep, inline = t.partition("=")
+            if NAME_FLAG.match(flag):
+                if sep:
+                    vals.append(inline)
+                elif i + 1 < len(tokens) and not tokens[i + 1].startswith("-"):
+                    vals.append(tokens[i + 1])
+        i += 1
+    return vals
+
+
 def tokenize(segment):
     try:
         import shlex
@@ -529,39 +564,194 @@ def strip_invisibles(value):
     )
 
 
+# High-confidence Cyrillic/Greek look-alikes of the Latin letters used in the
+# markers, folded back to Latin so a homoglyph stamp/tag ("clаude" with a
+# Cyrillic 'а") cannot dodge the marker checks. NFKC (applied first) already
+# folds fullwidth/compatibility forms; this table covers the script-confusables
+# NFKC leaves alone. Kept to letters that actually appear in the markers.
+_CONFUSABLES = {
+    # Cyrillic -> Latin
+    "а": "a",
+    "е": "e",
+    "о": "o",
+    "р": "p",
+    "с": "c",
+    "х": "x",
+    "у": "y",
+    "і": "i",
+    "ј": "j",
+    "ѕ": "s",
+    "ԁ": "d",
+    "һ": "h",
+    "ӏ": "l",
+    "ԛ": "q",
+    "ԍ": "g",
+    "т": "t",
+    "н": "h",
+    "к": "k",
+    "м": "m",
+    # Greek -> Latin
+    "α": "a",
+    "ϲ": "c",
+    "ε": "e",
+    "ι": "i",
+    "ο": "o",
+    "ρ": "p",
+    "τ": "t",
+    "ν": "v",
+    "υ": "u",
+    "ɡ": "g",
+}
+_CONFUSABLE_TABLE = str.maketrans(_CONFUSABLES)
+
+
+def canon_fold(value):
+    """Normalize an audit-visible value to the ASCII the marker checks expect:
+    strip invisibles, apply NFKC (folds fullwidth/compatibility forms),
+    lower-case, then fold high-confidence script-confusables to Latin. So a
+    fullwidth or Cyrillic/Greek look-alike spelling of a marker collapses to the
+    same string an ASCII marker would."""
+    normalized = unicodedata.normalize("NFKC", strip_invisibles(value or "")).lower()
+    return normalized.translate(_CONFUSABLE_TABLE)
+
+
+# Per-brand obfuscation patterns: the brand's letters in order, allowing
+# separators between them (invisibles are already stripped by canon_fold), but
+# ANCHORED so the match is a whole word rather than a coincidental substring of a
+# longer one. This catches c-l-a-u-d-e, cl.aude, and open_ai, while leaving
+# ordinary hyphenated words clean (open-air, geminide-..., scope-nairobi) --
+# their brand letters run into more letters, so the trailing anchor fails.
+_BRAND_PATTERNS = [
+    re.compile(r"(?<![a-z0-9])" + r"[-_.\s]*".join(tok) + r"(?![a-z0-9])")
+    for tok in BRAND_TOKENS
+]
+
+
 def brand_marker_hit(value):
-    """Second marker pass: strip invisibles and separators, then look for
-    high-signal brand tokens only, so xx-c-l-a-u-d-e-run and a soft-hyphen
-    variant cannot dodge the word-boundary pass while ordinary words
-    (claudia, geminide-...) stay clean."""
-    stripped = re.sub(r"[-_.\s]", "", strip_invisibles(value).lower())
-    return any(tok in stripped for tok in BRAND_TOKENS)
+    """Second marker pass: canonicalize (NFKC + homoglyph fold + lowercase), then
+    look for a brand token whose letters appear in order and separator-delimited,
+    anchored as a whole word -- so xx-c-l-a-u-d-e-run, a soft-hyphen variant, a
+    Cyrillic-lookalike, and open_ai are denied, while ordinary words (claudia,
+    open-air, geminide-...) stay clean."""
+    v = canon_fold(value)
+    return any(p.search(v) for p in _BRAND_PATTERNS)
 
 
 def extract_substitutions(text):
-    """Return the bodies of $(...) and `...` command substitutions found
-    anywhere in the command, so a nested aws invocation is classified even
-    when quoting hides it from the token scan. Scanning the whole text also
+    """Return the bodies of command and process substitutions found anywhere in
+    the command -- $(...), `...`, and the process substitutions <(...) / >(...)
+    -- so a nested aws invocation is classified even when quoting or a process
+    substitution hides it from the token scan. Scanning the whole text also
     reaches substitutions nested inside other substitutions."""
     bodies = []
     for m in re.finditer(r"`([^`]+)`", text):
         bodies.append(m.group(1))
-    i = 0
-    while True:
-        i = text.find("$(", i)
-        if i == -1:
+    # $(...), <(...), >(...): a two-character opener ending in '(' followed by a
+    # balanced-paren body. bash executes the body of a process substitution, so
+    # an aws call inside <(...) / >(...) must be classified exactly like one in
+    # $(...) -- otherwise it bypasses the gate entirely.
+    for opener in ("$(", "<(", ">("):
+        i = 0
+        while True:
+            i = text.find(opener, i)
+            if i == -1:
+                break
+            depth = 1
+            j = i + 2
+            while j < len(text) and depth:
+                if text[j] == "(":
+                    depth += 1
+                elif text[j] == ")":
+                    depth -= 1
+                j += 1
+            # Unterminated substitution: take the rest (errs strict).
+            bodies.append(text[i + 2 : j - 1] if depth == 0 else text[i + 2 :])
+            i += 2
+    return [b for b in bodies if b.strip()]
+
+
+def shell_words(text):
+    """Minimal quote-aware word split that NEVER raises. Quotes group spaces;
+    an unterminated quote reads to end-of-string (errs strict); everything else
+    splits on whitespace. Used to locate a shell -c / here-string body even in a
+    command a strict lexer would reject -- e.g. an unbalanced quote inside a
+    trailing `# comment` that the real shell ignores but shlex.split chokes on
+    (which would otherwise let `bash -c '...aws...' # "x` fail open)."""
+    words, i, n = [], 0, len(text)
+    while i < n:
+        while i < n and text[i].isspace():
+            i += 1
+        if i >= n:
             break
-        depth = 1
-        j = i + 2
-        while j < len(text) and depth:
-            if text[j] == "(":
-                depth += 1
-            elif text[j] == ")":
-                depth -= 1
-            j += 1
-        # Unterminated substitution: take the rest (errs strict).
-        bodies.append(text[i + 2 : j - 1] if depth == 0 else text[i + 2 :])
-        i += 2
+        buf = []
+        while i < n and not text[i].isspace():
+            c = text[i]
+            if c in "'\"":
+                i += 1
+                while i < n and text[i] != c:
+                    buf.append(text[i])
+                    i += 1
+                i += 1  # past the closing quote (or past end if unterminated)
+            else:
+                buf.append(c)
+                i += 1
+        words.append("".join(buf))
+    return words
+
+
+# Inline shells whose -c argument (or here-string) is an executable script.
+SHELLS = {"sh", "bash", "zsh", "dash", "ksh", "ash"}
+# Long options that consume the following token as their value (so it is not
+# mistaken for the -c script): bash --rcfile FILE / --init-file FILE.
+SHELL_VALUE_OPTS = {"--rcfile", "--init-file"}
+
+
+def extract_shell_c(text):
+    """Return the script bodies an inline shell would execute: the argument of a
+    -c option (``bash -c '<script>'``, ``sh -lc ...``) and a spaced here-string
+    (``bash <<< '<script>'``), so an aws call hidden inside the quoted script is
+    scanned like a substitution body. Never raises; the lenient word split means
+    a trailing comment with an unbalanced quote cannot make it fail open, and a
+    long option like --rcfile is not mistaken for the -c cluster."""
+    toks = shell_words(text)
+    bodies = []
+    i = 0
+    while i < len(toks):
+        if toks[i].rsplit("/", 1)[-1] in SHELLS:
+            j, saw_c = i + 1, False
+            while j < len(toks):
+                t = toks[j]
+                if t == "<<<":  # here-string: the next word is the script
+                    if j + 1 < len(toks):
+                        bodies.append(toks[j + 1])
+                    break
+                if t == "--":
+                    j += 1
+                    break
+                if t.startswith("--"):
+                    j += 2 if t in SHELL_VALUE_OPTS else 1
+                    continue
+                if t.startswith(("-", "+")):
+                    # -c with the script FUSED onto the option token
+                    # (-c'...', -lc"..." -> shell_words yields -cscript): the
+                    # remainder after the c is the script.
+                    m = re.match(r"[-+][a-z]*c(.+)$", t, re.IGNORECASE)
+                    if m:
+                        bodies.append(m.group(1))
+                        saw_c = True
+                        break
+                    # A short cluster carrying 'c' (-c, -lc): the next positional
+                    # is the script.
+                    if "c" in t.lower():
+                        saw_c = True
+                    # -o/+o <mode>, -O <shopt> take the next token as their value,
+                    # which must not be mistaken for the -c script.
+                    j += 2 if re.search(r"[oO]$", t) else 1
+                    continue
+                break  # first positional token: the -c script, if one was seen
+            if saw_c and j < len(toks):
+                bodies.append(toks[j])
+        i += 1
     return [b for b in bodies if b.strip()]
 
 
@@ -597,7 +787,12 @@ def main():
     if event.get("tool_name") != "Bash":
         sys.exit(0)
     cmd = (event.get("tool_input") or {}).get("command") or ""
-    if not re.search(r"(^|[\s;&|(`{])(?:\S*/)?aws(\s|$)", cmd):
+    # Pre-filter (a cheap perf gate only): skip the full parse when the command,
+    # with quotes removed, contains no "aws" substring at all. Quote removal
+    # keeps quote-split ("aws", a"w"s) and option-fused (-c'aws...') executables
+    # in scope; a broader match here only ever means more commands are fully
+    # parsed (then correctly classified or ignored), never fewer.
+    if "aws" not in re.sub(r"[\"']", "", cmd).lower():
         sys.exit(0)
 
     policy = load_policy()
@@ -605,6 +800,15 @@ def main():
     profiles = policy.get("profiles") or {}
     stamp_prefix = ((policy.get("operator") or {}).get("stamp_prefix") or "").strip()
     required_tags = policy.get("required_tags") or {}
+    # frozen_accounts holds account IDs (advisory: the gate can't resolve a
+    # profile to an account without calling AWS) OR profile names. When a
+    # resolved profile NAME matches an entry, treat it as frozen -- a
+    # defense-in-depth deny that only ever adds strictness.
+    frozen_names = {
+        str(x)
+        for x in (policy.get("frozen_accounts") or [])
+        if isinstance(x, (str, int))
+    }
     inventory = load_inventory()
 
     if re.search(r"--no-verify-ssl\b", cmd):
@@ -617,33 +821,73 @@ def main():
     any_sensitive = False
     reasons_ask = []
 
-    loop_head = re.compile(r"(^|[;&|]\s*|\$\(\s*|`\s*)\s*(for|while|until)\s")
-    has_loop = (
-        bool(loop_head.search(cmd))
-        or bool(re.search(r"\bxargs\b[^;|&]*\baws\b", cmd))
-        or bool(re.search(r"-exec(?:dir)?\b[^;|&]*\baws\b", cmd))
-        or bool(re.search(r"\bparallel\b[^;|&]*\baws\b", cmd))
-    )
-
-    # Scan units: the command itself plus every command-substitution body, so
-    # an aws invocation quoted inside $(...) or backticks is still classified.
-    units = [cmd]
-    for body in extract_substitutions(cmd):
-        if body not in units:
-            units.append(body)
+    # Scan units: the command itself, every command/process-substitution body,
+    # and every inline `sh -c`/`bash -c` script, so an aws invocation hidden by
+    # quoting, a $()/<()/>() substitution, or a shell -c wrapper is still seen.
+    # Build the scan units transitively: the command, then the body of every
+    # substitution / shell -c wrapper, then the bodies inside THOSE bodies, and
+    # so on. This reaches a `bash -c '...aws...'` nested inside $(...)/<(...) or
+    # a backtick, which a single non-recursive pass would miss. Bodies only ever
+    # get shorter, `seen` dedupes, and the cap bounds any pathological fan-out.
+    units, seen, queue = [], set(), [cmd]
+    while queue and len(units) < 4096:
+        u = queue.pop(0)
+        if u in seen:
+            continue
+        seen.add(u)
+        units.append(u)
+        for body in list(extract_substitutions(u)) + list(extract_shell_c(u)):
+            if body not in seen:
+                queue.append(body)
 
     # AWS_PROFILE exported (or bare-assigned) in an earlier segment carries
     # forward to later invocations that name no profile of their own.
     carried = None
 
     for unit in units:
-        # Split into shell segments so each aws invocation is judged with its
-        # own inline environment. Quoted separators may over-split; that only
-        # errs toward stricter judgments.
-        for seg in re.split(r";|&&|\|\||\|", unit):
+        # Collapse backslash-newline line continuations so a stamp on a
+        # continued line stays attached to its aws verb, then split into shell
+        # segments. A newline and a single '&' are separators too, so a later
+        # command can never inherit an earlier command's inline stamp or
+        # profile. Quoted separators may over-split; that only errs toward
+        # stricter judgments.
+        unit = re.sub(r"\\\r?\n", " ", unit)
+        loop_depth = 0
+        for seg in re.split(r"[;\r\n]|&&|\|\||\||&(?!&)", unit):
+            # Loop/dispatcher detection on a quote-stripped view (classification
+            # still uses the original seg). A segment that STARTS with a loop
+            # keyword opens a loop body; a bare `done` closes it. Per-segment
+            # scoping means a mutation OUTSIDE the loop -- after `done`, or in an
+            # unrelated segment that merely says "wait for it" -- is no longer
+            # swept up by the mass-mutation deny the way a whole-command flag was.
+            bare = re.sub(r"'[^']*'|\"[^\"]*\"", " ", seg)
+            # A loop head is a segment beginning with for/while/until (an inner
+            # loop begins `do for ...`); `done` is a reserved word only in
+            # command position, i.e. at the start of a segment, so matching it
+            # there ignores a prose "done" that is merely an argument.
+            if re.match(r"\s*(?:do\s+)?(?:for|while|until)\b", bare):
+                loop_depth += 1
+            closes_loop = bool(re.match(r"\s*done\b", bare))
+            # This segment runs a mutating aws many times: it is inside a loop
+            # body, or it dispatches aws over a list (xargs / find -exec /
+            # parallel). The dispatcher must be followed by aws in the segment,
+            # so an ordinary path or name containing "-exec"/"xargs" (e.g.
+            # s3://my-exec/file) is not mistaken for a dispatch.
+            seg_mass = loop_depth > 0 or bool(
+                re.search(
+                    r"(?:\bxargs\b|\bparallel\b|-exec(?:dir)?\b)[^\n]*\baws\b", bare
+                )
+            )
             tokens = tokenize(seg)
-            if not re.search(r"(^|[\s(`{])(?:\S*/)?aws(\s|$)", seg):
+            # Detect the aws executable from the TOKENS (after the shell strips
+            # quotes), not the raw string, so "aws"/'aws'/a"w"s are recognized.
+            if not any(
+                tok == "aws" or (tok.endswith("/aws") and "://" not in tok)
+                for tok in tokens
+            ):
                 carried = update_carried_profile(tokens, carried)
+                if closes_loop and loop_depth > 0:
+                    loop_depth -= 1
                 continue
             for idx, tok in enumerate(tokens):
                 # The executable is the aws CLI when the token is `aws` or a
@@ -661,7 +905,9 @@ def main():
                 if re.search(r"--force\b", seg) and cls in ("modify", "destroy"):
                     sens = True
                 if re.search(
-                    r"--acl\s+(public-read|public-read-write|authenticated-read)", seg
+                    r"--acl[=\s]\s*[\"']?"
+                    r"(?:public-read|public-read-write|authenticated-read)\b",
+                    seg,
                 ):
                     sens = True
                 if (
@@ -671,6 +917,23 @@ def main():
                     sens = True
 
                 mutating = cls != "read"
+
+                # A destructive verb reached with --recursive (or a wildcard
+                # --include/--exclude on an s3 delete) is a MASS operation, not a
+                # single target -- the confirmation prompt must say so rather than
+                # repeat the single-target "look before you delete" line.
+                if cls == "destroy" and (
+                    re.search(r"--recursive\b", seg)
+                    or (
+                        service == "s3"
+                        and re.search(r"--(?:include|exclude)[=\s]", seg)
+                    )
+                ):
+                    reasons_ask.append(
+                        f"'aws {service} {op}' with --recursive/wildcard removes MANY objects, "
+                        "not one target: enumerate first (bounded read), confirm the list, then "
+                        "delete one target per command."
+                    )
 
                 # Grants to public principal groups open world access without
                 # touching the --acl shorthand: an exposure boundary.
@@ -708,7 +971,10 @@ def main():
                     service, op, cls, sens, stamp, effective_profile, prof_class
                 )
 
-                if prof_class == "frozen" and cls != "read":
+                frozen = prof_class == "frozen" or (
+                    effective_profile and effective_profile in frozen_names
+                )
+                if frozen and cls != "read":
                     decision(
                         "deny",
                         f"Profile '{effective_profile}' is FROZEN by local policy: reads only. "
@@ -717,7 +983,7 @@ def main():
                     )
 
                 if mutating and not explicit_personal:
-                    if has_loop:
+                    if seg_mass:
                         decision(
                             "deny",
                             f"Mutating operation 'aws {service} {op}' inside a loop/batch "
@@ -743,7 +1009,7 @@ def main():
                         )
                     if (
                         MARKERS.search(stamp)
-                        or MARKERS.search(strip_invisibles(stamp))
+                        or MARKERS.search(canon_fold(stamp))
                         or brand_marker_hit(stamp)
                     ):
                         decision(
@@ -762,13 +1028,14 @@ def main():
 
                 # Markers inside tag values (audit-visible)
                 for m in re.finditer(
-                    r"--(?:tags|tag-specifications|tagging)[= ]((?:\"[^\"]*\"|'[^']*'|\S)+)",
+                    r"--(?:tags|tag-specifications|tagging)[=\s]\s*"
+                    r"((?:\"[^\"]*\"|'[^']*'|\S)+)",
                     seg,
                 ):
                     tagval = m.group(1)
                     if (
                         MARKERS.search(tagval)
-                        or MARKERS.search(strip_invisibles(tagval))
+                        or MARKERS.search(canon_fold(tagval))
                         or brand_marker_hit(tagval)
                     ):
                         decision(
@@ -779,7 +1046,28 @@ def main():
                             rec,
                         )
 
-                m = re.search(r"--endpoint-url[= ](\S+)", seg)
+                # Markers inside a resource NAME the operator is assigning on a
+                # create (hard prohibition #7: audit-visible values name the
+                # accountable human, never the tooling). Scoped to create so a
+                # command that merely REFERENCES a pre-existing brand-named
+                # resource is not blocked.
+                if cls == "create":
+                    for nm in name_flag_values(tokens, idx):
+                        if (
+                            MARKERS.search(nm)
+                            or MARKERS.search(canon_fold(nm))
+                            or brand_marker_hit(nm)
+                        ):
+                            decision(
+                                "deny",
+                                "Resource name contains a tool/automation marker "
+                                "(separator-, invisible-, or homoglyph-obfuscated markers "
+                                "included). Resource names are attributed to the accountable "
+                                "human operator only.",
+                                rec,
+                            )
+
+                m = re.search(r"--endpoint-url[=\s]\s*(\S+)", seg)
                 if m:
                     url = m.group(1).strip("'\"")
                     host = re.sub(r"^https?://", "", url).split("/")[0].split(":")[0]
@@ -817,6 +1105,8 @@ def main():
                     rec["_asked"] = True
 
             carried = update_carried_profile(tokens, carried)
+            if closes_loop and loop_depth > 0:
+                loop_depth -= 1
 
     if worst == "destroy":
         reasons_ask.insert(

@@ -116,7 +116,31 @@ VERB_STATES = {
     ),
     "restore": ("available", "active", "completed"),
     "reboot": ("available", "running"),
+    "attach": ("in-use", "attached", "in-service"),
+    "detach": ("available", "detached"),
+    "register": ("in-service", "registered", "healthy"),
 }
+
+# Terminal states of a "gone" resource. A non-destructive verb (attach, update,
+# register, ...) never reaches one, so a waiter carrying one of these is a
+# guaranteed hang-then-timeout and must never be suggested for create/modify.
+GONE_STATES = (
+    "deleted",
+    "terminated",
+    "removed",
+    "released",
+    "not-exists",
+    "inactive",
+    "deregistered",
+)
+
+
+def state_in_name(state, name):
+    """True when `state` appears as a whole hyphen-delimited run of the waiter
+    name -- so "in-use" matches "volume-in-use" but "registered" does NOT match
+    "target-deregistered" (which token-splitting or a bare substring would)."""
+    return re.search(r"(?:^|-)" + re.escape(state) + r"(?:$|-)", name) is not None
+
 
 # Waiter state words that fit each class of change, used to rank candidates.
 STATE_HINT = {
@@ -290,8 +314,22 @@ def find_waiter(service, op, cls, waiters):
         noun_hits = sum(1 for t in wtoks if t in nouns or t.rstrip("s") in nouns)
         if noun_hits == 0:
             continue
-        if required_states is not None and not any(t in required_states for t in wtoks):
+        # Match states as whole hyphen-delimited runs of the waiter name so
+        # multi-word states ("in-use") match "volume-in-use" without a bare
+        # substring falsely matching ("registered" in "target-deregistered").
+        if required_states is not None and not any(
+            state_in_name(st, w["name"]) for st in required_states
+        ):
             continue  # wrong terminal state for this verb: worse than no waiter
+        # Backstop for verbs with no explicit state set (the broad update/modify
+        # family): a create/modify op never ends in a "gone" state, so never
+        # suggest a deletion-state waiter for one -- that is a guaranteed hang.
+        if (
+            required_states is None
+            and cls in ("create", "modify")
+            and any(state_in_name(st, w["name"]) for st in GONE_STATES)
+        ):
+            continue
         score = noun_hits * 2
         if any(t in hint_states for t in wtoks):
             score += 3

@@ -1,0 +1,66 @@
+name: ci
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  gate:
+    name: gate (${{ matrix.os }} · py${{ matrix.python }})
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, macos-latest]
+        python: ["3.9", "3.11", "3.13"]
+        exclude:
+          # macOS runners are slow/costly: cover one Python there, all on Linux.
+          - os: macos-latest
+            python: "3.9"
+          - os: macos-latest
+            python: "3.13"
+    defaults:
+      run:
+        working-directory: plugins/aws-secure-ops/skills/aws-secure-ops/scripts
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python }}
+
+      - name: Compile every script
+        run: python -m py_compile *.py
+
+      - name: Decision corpus
+        run: python run-corpus.py
+
+      - name: Property / differential fuzz
+        run: python test-gate-properties.py
+
+      - name: Gate unit suite
+        run: bash test-classify-aws-command.sh
+
+      - name: Gate hardening suite
+        run: bash test-gate-hardening.sh
+
+      - name: Evasion corpus suite
+        run: bash test-evasion-corpus.sh
+
+      - name: Terminal shim suite
+        run: bash test-shim.sh
+
+      - name: Hook launcher suite
+        run: bash test-run-gate.sh
+
+      - name: Installer suite
+        run: bash test-install.sh
+
+      - name: Inventory integrity
+        run: python verify-inventory.py
+
+      - name: Version consistency
+        run: python release.py --check

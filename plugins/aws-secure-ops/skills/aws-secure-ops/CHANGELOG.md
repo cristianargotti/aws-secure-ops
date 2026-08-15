@@ -2,6 +2,17 @@
 
 All notable changes to the aws-secure-ops package are documented here.
 
+## [2.1.0]
+
+Security-hardening pass driven by a deep audit (see the repo-root CHANGELOG for
+the full list). Highlights: spelling-robust flag escalations and deeper shell
+construct coverage (process substitution, `bash -c`, nested wrappers); the
+mass-mutation deny scoped per loop body instead of the whole command; NFKC +
+homoglyph marker folding, now also on resource names; a reproducible inventory
+pipeline (`corrections.json`, byte-identical rebuild); an interpreter-resolving,
+fail-closed hook launcher; and a data-driven decision corpus as the regression
+net. Every change ships with a pinned corpus case.
+
 ## [2.0.0]
 
 Repackaged as a standalone, togglable Claude Code plugin.

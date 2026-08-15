@@ -232,6 +232,49 @@ def coverage_note(rows, report):
     report.note(f"rows with source=review: {review_source}")
 
 
+def check_corrections(rows, report):
+    """Every corrections.json entry must be reflected in the CSV -- same class and
+    sensitive, marked source=review -- so a rebuild that re-applies the review
+    layer is guaranteed to match the shipped inventory."""
+    path = default_path("corrections.json")
+    if not path.is_file():
+        report.line("  corrections.json absent; nothing to check")
+        return
+    try:
+        corr = json.loads(path.read_text(encoding="utf-8"))
+    except (OSError, ValueError) as exc:
+        report.fail(f"corrections.json unreadable: {exc}")
+        return
+    if not isinstance(corr, list):
+        report.fail("corrections.json is not a JSON list")
+        return
+    index = {(r["service"], r["operation"]): r for r in rows}
+    problems = 0
+    for c in corr:
+        key = (c.get("service"), c.get("operation"))
+        row = index.get(key)
+        if row is None:
+            report.fail(f"corrections: {key[0]} {key[1]} is not in the inventory")
+            problems += 1
+            continue
+        want_sens = "1" if int(c.get("sensitive", 0)) else "0"
+        if (
+            row["class"] != str(c.get("class"))
+            or row["sensitive"] != want_sens
+            or row["source"] != "review"
+        ):
+            report.fail(
+                f"corrections: {key[0]} {key[1]} is "
+                f"{row['class']}/{row['sensitive']}/{row['source']} in the CSV, "
+                f"expected {c.get('class')}/{want_sens}/review"
+            )
+            problems += 1
+    if not problems:
+        report.line(
+            f"  {len(corr)} corrections all reflected in the CSV (source=review)"
+        )
+
+
 def main():
     parser = argparse.ArgumentParser(
         description="Verify the classified operation inventory."
@@ -280,6 +323,9 @@ def main():
 
     report.section("Canonical spot-checks")
     check_spot_checks(rows, report)
+
+    report.section("Corrections layer")
+    check_corrections(rows, report)
 
     report.section("Coverage notes (informational)")
     coverage_note(rows, report)

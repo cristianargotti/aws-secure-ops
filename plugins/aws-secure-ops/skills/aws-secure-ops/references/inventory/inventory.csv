@@ -2529,7 +2529,7 @@ cloudformation,list-stacks,read,0,0,1,model,prefix
 cloudformation,list-type-registrations,read,0,0,0,model,prefix
 cloudformation,list-type-versions,read,0,0,0,model,prefix
 cloudformation,list-types,read,0,0,1,model,prefix
-cloudformation,package,execute,0,0,0,review,reviewed
+cloudformation,package,execute,0,0,0,custom,curated
 cloudformation,publish-type,execute,0,0,0,model,prefix
 cloudformation,record-handler-progress,execute,0,0,0,review,reviewed
 cloudformation,register-publisher,create,0,0,0,model,prefix
@@ -2848,7 +2848,7 @@ cloudtrail,stop-logging,destroy,1,0,0,model,exact
 cloudtrail,update-channel,modify,0,0,0,model,prefix
 cloudtrail,update-dashboard,modify,0,0,0,model,prefix
 cloudtrail,update-event-data-store,modify,0,0,0,model,prefix
-cloudtrail,update-trail,modify,0,0,0,model,prefix
+cloudtrail,update-trail,modify,1,0,0,review,reviewed
 cloudtrail-data,put-audit-events,modify,0,0,0,model,prefix
 cloudwatch,delete-alarms,destroy,1,0,0,model,prefix
 cloudwatch,delete-anomaly-detector,destroy,1,0,0,model,prefix
@@ -3718,7 +3718,7 @@ configservice,list-tags-for-resource,read,0,0,1,model,prefix
 configservice,put-aggregation-authorization,modify,1,0,0,review,reviewed
 configservice,put-config-rule,modify,0,0,0,model,prefix
 configservice,put-configuration-aggregator,modify,0,0,0,model,prefix
-configservice,put-configuration-recorder,modify,0,0,0,model,prefix
+configservice,put-configuration-recorder,modify,1,0,0,review,reviewed
 configservice,put-conformance-pack,modify,0,0,0,model,prefix
 configservice,put-delivery-channel,modify,0,0,0,model,prefix
 configservice,put-evaluations,modify,0,0,0,model,prefix
@@ -8082,7 +8082,7 @@ guardduty,stop-monitoring-members,destroy,1,0,0,review,reviewed
 guardduty,tag-resource,modify,0,0,0,model,prefix
 guardduty,unarchive-findings,modify,0,0,0,model,prefix
 guardduty,untag-resource,modify,0,0,0,model,prefix
-guardduty,update-detector,modify,0,0,0,model,prefix
+guardduty,update-detector,modify,1,0,0,review,reviewed
 guardduty,update-filter,modify,0,0,0,model,prefix
 guardduty,update-findings-feedback,modify,0,0,0,model,prefix
 guardduty,update-ip-set,modify,0,0,0,model,prefix
@@ -10524,6 +10524,7 @@ logs,start-query,execute,0,0,0,model,prefix
 logs,stop-query,execute,0,0,0,model,exact
 logs,tag-log-group,modify,0,0,0,model,prefix
 logs,tag-resource,modify,0,0,0,model,prefix
+logs,tail,read,0,0,0,custom,curated
 logs,test-metric-filter,execute,0,0,0,model,prefix
 logs,test-transformer,execute,0,0,0,model,prefix
 logs,untag-log-group,modify,0,0,0,model,prefix
@@ -14399,13 +14400,13 @@ route53domains,list-operations,read,0,0,1,model,prefix
 route53domains,list-prices,read,0,0,1,model,prefix
 route53domains,list-tags-for-domain,read,0,0,0,model,prefix
 route53domains,push-domain,destroy,1,0,0,review,reviewed
-route53domains,register-domain,create,0,0,0,model,prefix
+route53domains,register-domain,create,1,0,0,review,reviewed
 route53domains,reject-domain-transfer-from-another-aws-account,modify,0,0,0,model,prefix
-route53domains,renew-domain,create,0,0,0,model,prefix
+route53domains,renew-domain,create,1,0,0,review,reviewed
 route53domains,resend-contact-reachability-email,execute,0,0,0,model,prefix
 route53domains,resend-operation-authorization,execute,0,0,0,model,prefix
 route53domains,retrieve-domain-auth-code,read,1,0,0,review,reviewed
-route53domains,transfer-domain,modify,0,0,0,model,prefix
+route53domains,transfer-domain,modify,1,0,0,review,reviewed
 route53domains,transfer-domain-to-another-aws-account,modify,1,0,0,review,reviewed
 route53domains,update-domain-contact,modify,0,0,0,model,prefix
 route53domains,update-domain-contact-privacy,modify,0,0,0,model,prefix
@@ -14597,7 +14598,7 @@ s3,mv,modify,1,1,0,custom,curated
 s3,presign,read,1,0,0,custom,curated
 s3,rb,destroy,1,0,0,custom,curated
 s3,rm,destroy,1,1,0,custom,curated
-s3,sync,modify,1,1,0,custom,curated
+s3,sync,modify,0,1,0,custom,curated
 s3,website,modify,1,0,0,custom,curated
 s3api,abort-multipart-upload,modify,0,0,0,model,prefix
 s3api,complete-multipart-upload,execute,0,0,0,model,prefix
@@ -15407,7 +15408,7 @@ security-ir,update-resolver-type,modify,0,0,0,model,prefix
 securityhub,accept-administrator-invitation,modify,0,0,0,model,prefix
 securityhub,accept-invitation,modify,0,0,0,model,prefix
 securityhub,batch-delete-automation-rules,destroy,1,0,0,model,prefix
-securityhub,batch-disable-standards,modify,0,0,0,model,prefix
+securityhub,batch-disable-standards,modify,1,0,0,review,reviewed
 securityhub,batch-enable-standards,modify,0,0,0,model,prefix
 securityhub,batch-get-automation-rules,read,0,0,0,model,prefix
 securityhub,batch-get-configuration-policy-associations,read,0,0,0,model,prefix
@@ -16230,7 +16231,7 @@ ssm,start-associations-once,execute,0,0,0,model,prefix
 ssm,start-automation-execution,execute,0,0,0,model,prefix
 ssm,start-change-request-execution,execute,0,0,0,model,prefix
 ssm,start-execution-preview,execute,0,0,0,model,prefix
-ssm,start-session,execute,1,0,0,review,reviewed
+ssm,start-session,execute,1,0,0,custom,curated
 ssm,stop-automation-execution,execute,0,0,0,model,prefix
 ssm,terminate-session,destroy,1,0,0,model,prefix
 ssm,unlabel-parameter-version,modify,0,0,0,review,reviewed
@@ -16365,7 +16366,7 @@ ssm-sap,update-application-settings,modify,0,0,0,model,prefix
 sso,get-role-credentials,read,1,0,0,model,secret
 sso,list-account-roles,read,0,0,1,model,prefix
 sso,list-accounts,read,0,0,1,model,prefix
-sso,login,read,1,0,0,review,reviewed
+sso,login,read,1,0,0,custom,curated
 sso,logout,read,0,0,0,custom,curated
 sso-admin,attach-customer-managed-policy-reference-to-permission-set,modify,1,0,0,review,reviewed
 sso-admin,attach-managed-policy-to-permission-set,modify,1,0,0,review,reviewed
