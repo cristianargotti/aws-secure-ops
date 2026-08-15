@@ -1,14 +1,14 @@
 {
   "data_dir": "/opt/homebrew/Cellar/awscli/2.32.9/libexec/lib/python3.13/site-packages/awscli/botocore/data",
   "services": 416,
-  "operations": 17805,
+  "operations": 17806,
   "waiters": 316,
   "class_totals": {
     "create": 2250,
     "destroy": 2487,
     "execute": 1028,
     "modify": 4374,
-    "read": 7666
+    "read": 7667
   },
   "unknown_verb_operations": 21,
   "domain_sizes": {
@@ -24,6 +24,6 @@
     "data-analytics-ai": 65,
     "platform-misc": 115
   },
-  "sensitive_operations": 3128,
-  "reviewed_rows": 769
+  "sensitive_operations": 3135,
+  "reviewed_rows": 776
 }

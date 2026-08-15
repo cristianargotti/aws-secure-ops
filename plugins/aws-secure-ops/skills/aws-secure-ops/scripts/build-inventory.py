@@ -503,6 +503,7 @@ CUSTOM_ROWS = [
     ("configure", "export-credentials", "read", 1, 0, 0),
     ("sso", "login", "read", 0, 0, 0),
     ("sso", "logout", "read", 0, 0, 0),
+    ("logs", "tail", "read", 0, 0, 0),  # v2 CLI live log tail: a pure read
 ]
 
 

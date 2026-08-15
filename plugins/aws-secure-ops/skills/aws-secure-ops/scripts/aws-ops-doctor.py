@@ -525,6 +525,9 @@ def probe_gate(command: str, policy_file: str):
     event = json.dumps({"tool_name": "Bash", "tool_input": {"command": command}})
     env = dict(os.environ)
     env["AWS_OPS_POLICY_FILE"] = policy_file  # isolate from any private policy
+    # Never let a probe decision reach the operator's real reconciliation
+    # ledger: the SessionStart watchdog runs this on every session start.
+    env["AWS_OPS_LEDGER_FILE"] = os.devnull
     proc = subprocess.run(
         [sys.executable, str(GATE)],
         input=event,
@@ -551,6 +554,7 @@ def check_stamp_mechanism():
         "operator": {"name": "doctor-probe", "stamp_prefix": "xx"},
         "profiles": {"probe-admin": "admin", "probe-read": "readonly"},
         "required_tags": {},
+        "ledger": False,
     }
     with tempfile.NamedTemporaryFile("w", suffix=".json", delete=False) as fh:
         json.dump(probe_policy, fh)

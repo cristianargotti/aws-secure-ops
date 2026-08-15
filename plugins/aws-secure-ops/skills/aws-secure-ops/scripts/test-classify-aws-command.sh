@@ -5,7 +5,8 @@ set -u
 
 GATE="$(cd "$(dirname "$0")" && pwd)/classify-aws-command.py"
 POLICY="$(mktemp)"
-trap 'rm -f "$POLICY"' EXIT
+LEDGER="$(mktemp)"
+trap 'rm -f "$POLICY" "$LEDGER"' EXIT
 cat > "$POLICY" <<'EOF'
 {
   "operator": { "name": "test-operator", "stamp_prefix": "xx" },
@@ -19,6 +20,7 @@ cat > "$POLICY" <<'EOF'
 }
 EOF
 export AWS_OPS_POLICY_FILE="$POLICY"
+export AWS_OPS_LEDGER_FILE="$LEDGER"
 
 pass=0; fail=0
 

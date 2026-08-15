@@ -24,8 +24,10 @@ decision is ever loosened):
      the gate stricter: it never grants the personal-profile exemption, which
      requires an explicit --profile / inline assignment on the invocation.
   2. aws invocations nested inside command substitution ($(...) and
-     backticks) are extracted and classified like any other invocation, so a
-     mutation cannot hide inside a quoted argument.
+     backticks), process substitution (<(...) / >(...)), and inline shell
+     wrappers (bash -c / sh -c '<script>') are extracted and classified like
+     any other invocation, so a mutation cannot hide inside a quoted argument,
+     a process substitution, or a -c script string.
   3. A mutating command that sources its input from --cli-input-json /
      --cli-input-yaml file://... escalates to ask: the gate cannot inspect
      the file, so the operator confirms its contents match the stated intent.
@@ -329,7 +331,7 @@ BRAND_TOKENS = ("claude", "anthropic", "openai", "chatgpt", "copilot", "gemini")
 # Public principal groups: a grant to either is a world-exposure boundary.
 PUBLIC_GRANT = re.compile(
     r"global/(?:AllUsers|AuthenticatedUsers)\b"
-    r"|--grant[a-z-]*[= ][^;|&]*\b(?:AllUsers|AuthenticatedUsers)\b"
+    r"|--grant[a-z-]*[=\s][^;|&]*\b(?:AllUsers|AuthenticatedUsers)\b"
 )
 
 # A resource/trust policy body sourced from a file the gate cannot read.
@@ -476,7 +478,10 @@ def parse_invocation(tokens, start):
     stamp = None
     for t in tokens[:start]:
         if t.startswith(STAMP_VAR + "="):
-            stamp = t.split("=", 1)[1].strip("'\"")
+            # Strip whitespace as well as quotes: a stamp of only spaces is not
+            # a purpose stamp, and must fall through to the unstamped-mutation
+            # deny rather than passing as a truthy value.
+            stamp = t.split("=", 1)[1].strip().strip("'\"").strip()
         m = re.match(r"AWS_PROFILE=(\S+)", t)
         if m:
             profile = m.group(1).strip("'\"")
@@ -539,29 +544,111 @@ def brand_marker_hit(value):
 
 
 def extract_substitutions(text):
-    """Return the bodies of $(...) and `...` command substitutions found
-    anywhere in the command, so a nested aws invocation is classified even
-    when quoting hides it from the token scan. Scanning the whole text also
+    """Return the bodies of command and process substitutions found anywhere in
+    the command -- $(...), `...`, and the process substitutions <(...) / >(...)
+    -- so a nested aws invocation is classified even when quoting or a process
+    substitution hides it from the token scan. Scanning the whole text also
     reaches substitutions nested inside other substitutions."""
     bodies = []
     for m in re.finditer(r"`([^`]+)`", text):
         bodies.append(m.group(1))
-    i = 0
-    while True:
-        i = text.find("$(", i)
-        if i == -1:
+    # $(...), <(...), >(...): a two-character opener ending in '(' followed by a
+    # balanced-paren body. bash executes the body of a process substitution, so
+    # an aws call inside <(...) / >(...) must be classified exactly like one in
+    # $(...) -- otherwise it bypasses the gate entirely.
+    for opener in ("$(", "<(", ">("):
+        i = 0
+        while True:
+            i = text.find(opener, i)
+            if i == -1:
+                break
+            depth = 1
+            j = i + 2
+            while j < len(text) and depth:
+                if text[j] == "(":
+                    depth += 1
+                elif text[j] == ")":
+                    depth -= 1
+                j += 1
+            # Unterminated substitution: take the rest (errs strict).
+            bodies.append(text[i + 2 : j - 1] if depth == 0 else text[i + 2 :])
+            i += 2
+    return [b for b in bodies if b.strip()]
+
+
+def shell_words(text):
+    """Minimal quote-aware word split that NEVER raises. Quotes group spaces;
+    an unterminated quote reads to end-of-string (errs strict); everything else
+    splits on whitespace. Used to locate a shell -c / here-string body even in a
+    command a strict lexer would reject -- e.g. an unbalanced quote inside a
+    trailing `# comment` that the real shell ignores but shlex.split chokes on
+    (which would otherwise let `bash -c '...aws...' # "x` fail open)."""
+    words, i, n = [], 0, len(text)
+    while i < n:
+        while i < n and text[i].isspace():
+            i += 1
+        if i >= n:
             break
-        depth = 1
-        j = i + 2
-        while j < len(text) and depth:
-            if text[j] == "(":
-                depth += 1
-            elif text[j] == ")":
-                depth -= 1
-            j += 1
-        # Unterminated substitution: take the rest (errs strict).
-        bodies.append(text[i + 2 : j - 1] if depth == 0 else text[i + 2 :])
-        i += 2
+        buf = []
+        while i < n and not text[i].isspace():
+            c = text[i]
+            if c in "'\"":
+                i += 1
+                while i < n and text[i] != c:
+                    buf.append(text[i])
+                    i += 1
+                i += 1  # past the closing quote (or past end if unterminated)
+            else:
+                buf.append(c)
+                i += 1
+        words.append("".join(buf))
+    return words
+
+
+# Inline shells whose -c argument (or here-string) is an executable script.
+SHELLS = {"sh", "bash", "zsh", "dash", "ksh", "ash"}
+# Long options that consume the following token as their value (so it is not
+# mistaken for the -c script): bash --rcfile FILE / --init-file FILE.
+SHELL_VALUE_OPTS = {"--rcfile", "--init-file"}
+
+
+def extract_shell_c(text):
+    """Return the script bodies an inline shell would execute: the argument of a
+    -c option (``bash -c '<script>'``, ``sh -lc ...``) and a spaced here-string
+    (``bash <<< '<script>'``), so an aws call hidden inside the quoted script is
+    scanned like a substitution body. Never raises; the lenient word split means
+    a trailing comment with an unbalanced quote cannot make it fail open, and a
+    long option like --rcfile is not mistaken for the -c cluster."""
+    toks = shell_words(text)
+    bodies = []
+    i = 0
+    while i < len(toks):
+        if toks[i].rsplit("/", 1)[-1] in SHELLS:
+            j, saw_c = i + 1, False
+            while j < len(toks):
+                t = toks[j]
+                if t == "<<<":  # here-string: the next word is the script
+                    if j + 1 < len(toks):
+                        bodies.append(toks[j + 1])
+                    break
+                if t == "--":
+                    j += 1
+                    break
+                if t.startswith("--"):
+                    j += 2 if t in SHELL_VALUE_OPTS else 1
+                    continue
+                if t.startswith("-"):
+                    # A short-option cluster carrying 'c' (e.g. -c, -lc) means
+                    # the next positional is the script. Long options handled
+                    # above, so a bare '-'-prefixed token here is short-form.
+                    if "c" in t:
+                        saw_c = True
+                    j += 1
+                    continue
+                break  # first positional token: the -c script, if one was seen
+            if saw_c and j < len(toks):
+                bodies.append(toks[j])
+        i += 1
     return [b for b in bodies if b.strip()]
 
 
@@ -597,7 +684,11 @@ def main():
     if event.get("tool_name") != "Bash":
         sys.exit(0)
     cmd = (event.get("tool_input") or {}).get("command") or ""
-    if not re.search(r"(^|[\s;&|(`{])(?:\S*/)?aws(\s|$)", cmd):
+    # Pre-filter: skip the full parse only when there is no aws token at all.
+    # The preceding-char class includes quotes so an aws call wrapped in
+    # `bash -c 'aws ...'` still reaches the parser (extract_shell_c). Being
+    # broader here only ever means more commands are fully parsed, never fewer.
+    if not re.search(r"(^|[\s;&|(`{'\"])(?:\S*/)?aws(\s|$)", cmd):
         sys.exit(0)
 
     policy = load_policy()
@@ -625,22 +716,38 @@ def main():
         or bool(re.search(r"\bparallel\b[^;|&]*\baws\b", cmd))
     )
 
-    # Scan units: the command itself plus every command-substitution body, so
-    # an aws invocation quoted inside $(...) or backticks is still classified.
-    units = [cmd]
-    for body in extract_substitutions(cmd):
-        if body not in units:
-            units.append(body)
+    # Scan units: the command itself, every command/process-substitution body,
+    # and every inline `sh -c`/`bash -c` script, so an aws invocation hidden by
+    # quoting, a $()/<()/>() substitution, or a shell -c wrapper is still seen.
+    # Build the scan units transitively: the command, then the body of every
+    # substitution / shell -c wrapper, then the bodies inside THOSE bodies, and
+    # so on. This reaches a `bash -c '...aws...'` nested inside $(...)/<(...) or
+    # a backtick, which a single non-recursive pass would miss. Bodies only ever
+    # get shorter, `seen` dedupes, and the cap bounds any pathological fan-out.
+    units, seen, queue = [], set(), [cmd]
+    while queue and len(units) < 256:
+        u = queue.pop(0)
+        if u in seen:
+            continue
+        seen.add(u)
+        units.append(u)
+        for body in list(extract_substitutions(u)) + list(extract_shell_c(u)):
+            if body not in seen:
+                queue.append(body)
 
     # AWS_PROFILE exported (or bare-assigned) in an earlier segment carries
     # forward to later invocations that name no profile of their own.
     carried = None
 
     for unit in units:
-        # Split into shell segments so each aws invocation is judged with its
-        # own inline environment. Quoted separators may over-split; that only
-        # errs toward stricter judgments.
-        for seg in re.split(r";|&&|\|\||\|", unit):
+        # Collapse backslash-newline line continuations so a stamp on a
+        # continued line stays attached to its aws verb, then split into shell
+        # segments. A newline and a single '&' are separators too, so a later
+        # command can never inherit an earlier command's inline stamp or
+        # profile. Quoted separators may over-split; that only errs toward
+        # stricter judgments.
+        unit = re.sub(r"\\\r?\n", " ", unit)
+        for seg in re.split(r"[;\r\n]|&&|\|\||\||&(?!&)", unit):
             tokens = tokenize(seg)
             if not re.search(r"(^|[\s(`{])(?:\S*/)?aws(\s|$)", seg):
                 carried = update_carried_profile(tokens, carried)
@@ -661,7 +768,9 @@ def main():
                 if re.search(r"--force\b", seg) and cls in ("modify", "destroy"):
                     sens = True
                 if re.search(
-                    r"--acl\s+(public-read|public-read-write|authenticated-read)", seg
+                    r"--acl[=\s]\s*[\"']?"
+                    r"(?:public-read|public-read-write|authenticated-read)\b",
+                    seg,
                 ):
                     sens = True
                 if (

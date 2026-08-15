@@ -38,6 +38,14 @@ fi
 _AWS_SHIM_DIR="$(cd "$(dirname "$_AWS_SHIM_SRC")" 2>/dev/null && pwd)"
 unset _AWS_SHIM_SRC
 
+# A pre-existing `aws` alias would make the `aws()` definition below a parse
+# error in both bash and zsh -- silently leaving the alias in place and every
+# aws command ungated, the exact opposite of this shim's fail-closed promise.
+# Remove it before defining the function. Aliases are expanded as a line is
+# read, so this must be its own line, read and run before `aws() {` is parsed;
+# quoting the name also defuses zsh global-alias expansion of the word here.
+unalias "aws" 2>/dev/null || true
+
 aws() {
   # All state is local so nothing leaks into the interactive shell.
   local _py _gate _event _out _rc _parsed _decision _reason _ans _c
@@ -151,3 +159,9 @@ except Exception:
       ;;
   esac
 }
+
+# Fail loud, not open: if the function did not install (an exotic shell, a
+# parse error, a stubborn alias), say so rather than let aws run ungated.
+if ! typeset -f aws >/dev/null 2>&1; then
+  printf '%s\n' "aws-shim: FAILED to install the aws gate function; aws is UNGATED in this shell." >&2
+fi
