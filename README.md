@@ -1,112 +1,184 @@
 # aws-secure-ops
 
-A secure-by-default operating protocol for the **AWS CLI**, packaged as a
-self-contained Claude Code plugin with a single on/off switch.
+Secure-by-default AWS CLI operating guardrails packaged for both Claude Code
+and Codex from one repository.
 
-It bundles three things that travel and toggle together:
+| Runtime | Effective execution policy |
+| --- | --- |
+| Claude Code | Existing upstream allow / ask / deny protocol, including staged and confirmed mutations. |
+| Codex | Fail-closed read-only lane: explicit, bounded, non-sensitive reads only. Mutations are planned or reviewed, never executed. |
 
-1. **The skill** — a universal protocol: identity gate, least-privilege profile
-   selection, purpose stamping, pointed bounded queries, staged mutations with
-   dry-run and change sets, professional tagging, single-target deletes, waiter-based
-   timing, secret hygiene, and audit-trail accountability. Plus a fully classified
-   inventory of every operation in the installed CLI.
-2. **The gate** — an evasion-hardened `PreToolUse` hook that inspects every `aws`
-   command _before_ it runs and returns allow / ask / deny. It records each decision
-   to a local, metadata-only ledger you can reconcile against CloudTrail.
-3. **The watchdog** — a `SessionStart` health check that warns you (and only then)
-   if the seatbelt ever comes loose.
+Codex does not currently pause safely when a `PreToolUse` hook returns `ask`.
+The Codex branch therefore converts every `ask` result to `deny`; this is an
+intentional safety boundary, not a missing confirmation dialog.
 
-Every audit-visible value it produces — purpose stamps, tags, resource names —
-attributes the action to the **accountable human operator, never the tooling**.
+## What ships
 
-## Install
+1. **Skill** — identity gate, least privilege, purpose stamping, bounded
+   queries, mutation planning, tagging, timing, secret hygiene, and
+   accountability.
+2. **Gate** — an evasion-hardened `PreToolUse` classifier with a pinned
+   inventory of 17,806 AWS CLI operations.
+3. **Watchdog** — an offline `SessionStart` doctor that stays silent when
+   healthy and warns when the seatbelt is loose.
+4. **Ledger** — metadata-only local decisions, never raw command text,
+   payloads, credentials, or secret values.
 
-This repo is its own marketplace. Add it, install the plugin, and reload:
+## Install in Claude Code
 
-```
+```text
 # From a local clone:
 /plugin marketplace add /path/to/aws-secure-ops
-# Or straight from GitHub once pushed:
-/plugin marketplace add <your-handle>/aws-secure-ops
+
+# Or from GitHub:
+/plugin marketplace add cristianargotti/aws-secure-ops
 
 /plugin install aws-secure-ops@secure-ops
 /reload-plugins
 ```
 
-Non-interactive equivalents are available as `claude plugin marketplace add ...`,
-`claude plugin install aws-secure-ops@secure-ops`, and `claude plugin enable ...`
-(a restart applies newly added hooks).
+Non-interactive equivalents are available through `claude plugin marketplace
+add`, `claude plugin install`, and `claude plugin enable`.
 
-## The toggle
+## Install in Codex
 
-Because it is a plugin, gate + skill + watchdog enable and disable as **one unit**:
+```sh
+# From a local clone:
+codex plugin marketplace add /path/to/aws-secure-ops
 
+# Or from GitHub:
+codex plugin marketplace add cristianargotti/aws-secure-ops
+
+codex plugin add aws-secure-ops@secure-ops
 ```
-/plugin disable aws-secure-ops@secure-ops   # gate, skill, and watchdog all off
-/plugin enable  aws-secure-ops@secure-ops   # all back on
+
+Installation does not automatically trust hooks. After the final install or
+update:
+
+1. Open a new Codex task and run `/hooks`.
+2. Choose **Review hooks**; do not choose **Trust all**.
+3. Review and trust only the `PreToolUse` and `SessionStart` hooks belonging
+   to `aws-secure-ops@secure-ops`.
+4. Start another new task and run the offline doctor/canary described below.
+
+Hook trust is tied to the exact definition hash, so every hook change requires
+review again. For a Git marketplace update, refresh the marketplace snapshot
+before reinstalling:
+
+```sh
+codex plugin marketplace upgrade secure-ops
+codex plugin remove aws-secure-ops@secure-ops
+codex plugin add aws-secure-ops@secure-ops
 ```
 
-or in `settings.json` (`user`, `project`, or `local` scope):
+For a local-path marketplace, update the clone first (for example, `git pull`),
+then run the same remove/add pair. In both cases, start a new task and review
+the two new hook hashes through `/hooks`.
+
+Do not keep a second personal copy enabled at the same time; duplicated
+`PreToolUse` hooks create ambiguous behavior.
+
+## Private policy
+
+The plugin reads `~/.claude/aws-ops.policy.json`; it never ships this private
+file. Example:
 
 ```json
-{ "enabledPlugins": { "aws-secure-ops@secure-ops": true } }
+{
+  "operator": { "name": "corporate identity", "stamp_prefix": "xx" },
+  "profiles": {
+    "prod-read": "readonly",
+    "prod-admin": "admin",
+    "legacy-frozen": "frozen",
+    "personal-lab": "personal"
+  },
+  "frozen_accounts": ["legacy-frozen"],
+  "required_tags": {
+    "environment": "production",
+    "team": "team-name",
+    "owner": "corporate identity"
+  },
+  "allowed_environment": {
+    "SSL_CERT_FILE": "/absolute/path/to/corporate-ca.pem"
+  },
+  "ledger": true
+}
 ```
 
-Disabling is a deliberate, total off. The hard controls for AWS remain where they
-belong — IAM, SCPs, permission boundaries, and read-only roles; the gate lowers the
-odds of a careless keystroke, it does not replace them. See the skill's
-[`references/threat-model.md`](plugins/aws-secure-ops/skills/aws-secure-ops/references/threat-model.md)
-for exactly what the gate catches and what it cannot.
+Claude treats the policy as optional. Codex requires a user-owned regular file
+with mode 600 and permits only profiles classified `readonly`. Inherited CA or
+proxy variables are rejected unless the private policy lists the exact key and
+value under `allowed_environment`; Python, loader, credential, profile, region,
+and endpoint overrides can never be allowlisted.
 
-## Optional: a local policy file
+## Codex command contract
 
-Drop a private `~/.claude/aws-ops.policy.json` to declare your own profile classes
-(read-only / admin / frozen / personal), required tags, and operator stamp prefix.
-It is read at runtime and **never ships with the plugin**. Without it, the gate runs
-on conservative defaults. The contract is documented in the skill's `SKILL.md`.
+The gate chooses the first installed executable from the known absolute paths
+`/opt/homebrew/bin/aws`, `/usr/local/bin/aws`, and `/usr/bin/aws`. A permitted
+read has this shape:
 
-## Optional: terminal coverage
-
-The gate covers `aws` commands run inside Claude Code. To extend the same checks to
-your normal terminal, opt into the best-effort shell wrapper:
-
-```
-source /path/to/aws-secure-ops/plugins/aws-secure-ops/skills/aws-secure-ops/scripts/aws-shim.sh
-```
-
-It is honest about its limits — a path-qualified `/usr/bin/aws` bypasses it — so it is
-a net against carelessness, not a substitute for IAM.
-
-## Without the plugin system
-
-If you do not use Claude Code plugins, install the same skill and hook directly:
-
-```
-claude plugin marketplace add /path/to/aws-secure-ops   # simplest, or:
-python3 plugins/aws-secure-ops/skills/aws-secure-ops/scripts/aws-ops-install.py
+```sh
+AWS_SDK_UA_APP_ID="<operator-prefix>-<task-slug>" \
+AWS_IGNORE_CONFIGURED_ENDPOINT_URLS=true \
+/absolute/path/to/aws sts get-caller-identity \
+  --profile <readonly-profile> \
+  --region <region> \
+  --no-cli-pager \
+  --no-cli-auto-prompt
 ```
 
-`aws-ops-install.py` wires the `PreToolUse` hook into your `settings.json` (with a
-backup, preserving your other hooks), scaffolds a policy file, and runs the doctor.
-`--uninstall` removes only what it added.
+For operations marked paginated, add equal `--max-items` and `--page-size`
+values from 1 through 100. The gate blocks implicit/admin/frozen/personal
+profiles, unknown operations, sensitive/configuration reads, custom endpoints,
+credential/context overrides, AWS CLI aliases, interactive prompts and PTYs,
+debug output, unbounded/zero timeouts, wrappers, loops, and every mutating
+class. High-level `s3 ls` and `logs tail` are denied in Codex because neither
+offers a reliable total-result bound; use bounded `s3api list-*` or
+`logs filter-log-events` operations instead.
 
-## Health check
+## Offline validation
 
+These commands classify synthetic hook events only; they never invoke AWS:
+
+```sh
+cd plugins/aws-secure-ops/skills/aws-secure-ops/scripts
+python3 test-codex-readonly.py
+bash test-run-gate.sh
+python3 aws-ops-doctor.py --quick
 ```
-python3 plugins/aws-secure-ops/skills/aws-secure-ops/scripts/aws-ops-doctor.py
+
+For the Codex packaging checks, run:
+
+```sh
+AWS_OPS_HOOK_RUNTIME=codex \
+AWS_OPS_MODE=readonly \
+PLUGIN_ROOT="$(cd ../../.. && pwd)" \
+python3 aws-ops-doctor.py --quick
 ```
 
-Verifies the gate compiles, the hook is wired, the policy is valid, the inventory is
-consistent, and the seatbelt actually denies an unstamped mutation.
+A safe end-to-end hook canary after trust uses a path that cannot exist:
 
-## Before you publish
+```sh
+/definitely-not-real/aws sts get-caller-identity
+```
 
-This repo ships with placeholder identity fields. Set them to yours before pushing:
+An active hook denies it before the shell. Without the hook it can only fail
+with file-not-found; in neither case can it contact AWS.
 
-- `.claude-plugin/marketplace.json` → `owner`
-- `plugins/aws-secure-ops/.claude-plugin/plugin.json` → `author`, and add
-  `homepage` / `repository` once the GitHub repo exists
-- `LICENSE` → copyright holder (or swap the license entirely)
+## Optional Claude/terminal compatibility
 
-The skill content itself is deliberately organization-agnostic: no account IDs, no
-internal system names. Keep it that way.
+`aws-ops-install.py` wires the legacy Claude settings hook when the plugin
+system is unavailable. `aws-shim.sh` provides best-effort terminal coverage.
+Neither is a Codex escape hatch.
+
+## Security boundary
+
+The hook is a safety belt, not a sandbox. IAM read-only roles, SCPs, permission
+boundaries, credential separation, and CloudTrail are the enforceable controls.
+Codex must not receive mutation-capable credentials. Safe future mutation
+support requires a separate plan → human approval → one-shot broker architecture;
+`PreToolUse ask`, user rules, or a local token are not sufficient.
+
+The Codex hook supervisor fails closed if Python/classification crashes or emits
+malformed output. The current Codex shell integration targets macOS/Linux with
+Python 3.8 or newer.

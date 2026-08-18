@@ -35,25 +35,52 @@ def main() -> int:
         sources["skill VERSION"] = (
             (skill / "VERSION").read_text(encoding="utf-8").strip()
         )
-        sources["plugin.json"] = json.loads(
+        sources["Claude plugin.json"] = json.loads(
             (
                 root / "plugins" / "aws-secure-ops" / ".claude-plugin" / "plugin.json"
+            ).read_text(encoding="utf-8")
+        )["version"]
+        sources["Codex plugin.json"] = json.loads(
+            (
+                root / "plugins" / "aws-secure-ops" / ".codex-plugin" / "plugin.json"
             ).read_text(encoding="utf-8")
         )["version"]
         mkt = json.loads(
             (root / ".claude-plugin" / "marketplace.json").read_text(encoding="utf-8")
         )
-        sources["marketplace.json (plugin)"] = mkt["plugins"][0]["version"]
+        claude_entry = next(
+            plugin
+            for plugin in mkt["plugins"]
+            if plugin.get("name") == "aws-secure-ops"
+        )
+        sources["Claude marketplace.json (plugin)"] = claude_entry["version"]
         top = mkt.get("version")
         if top is not None:
-            sources["marketplace.json (top)"] = top
-    except (OSError, ValueError, KeyError, IndexError) as exc:
+            sources["Claude marketplace.json (top)"] = top
+        codex_mkt = json.loads(
+            (root / ".agents" / "plugins" / "marketplace.json").read_text(
+                encoding="utf-8"
+            )
+        )
+        next(
+            plugin
+            for plugin in codex_mkt["plugins"]
+            if plugin.get("name") == "aws-secure-ops"
+        )
+    except (OSError, ValueError, KeyError, IndexError, StopIteration) as exc:
         print(f"release: could not read a version source: {type(exc).__name__}: {exc}")
         return 1
 
     changelog = (root / "CHANGELOG.md").read_text(encoding="utf-8")
     has_heading = bool(
         re.search(r"(?m)^##\s*\[" + re.escape(canonical) + r"\]", changelog)
+    )
+    skill_changelog = (skill / "CHANGELOG.md").read_text(encoding="utf-8")
+    skill_has_heading = bool(
+        re.search(
+            r"(?m)^##\s*\[" + re.escape(canonical) + r"\]",
+            skill_changelog,
+        )
     )
 
     problems = [
@@ -63,6 +90,10 @@ def main() -> int:
     ]
     if not has_heading:
         problems.append(f"CHANGELOG.md has no '## [{canonical}]' heading")
+    if not skill_has_heading:
+        problems.append(
+            f"skill CHANGELOG.md has no '## [{canonical}]' heading"
+        )
 
     if problems:
         print(f"release: version INCONSISTENT (canonical = {canonical}):")

@@ -47,11 +47,18 @@ decision is ever loosened):
      tool name cannot slip into the audit trail. Ordinary words that merely
      resemble a brand (e.g. a person's name) do not trip it.
 
-Documented residual: if the policy file is missing or corrupt the gate still
-runs (fail-open on configuration, as designed), but the frozen-by-name check
-cannot fire because no profile is classified. The stamp rule still denies
-unstamped mutations regardless. Account names stay in the private policy
-file; they are never hardcoded in this shareable gate.
+Codex compatibility mode is enabled with ``AWS_OPS_HOOK_RUNTIME=codex`` and
+``AWS_OPS_MODE=readonly``. In that mode the gate is deliberately fail-closed:
+``ask`` is converted to ``deny`` because Codex does not currently pause on an
+``ask`` hook result, the private policy and inventory must be valid, only
+explicitly classified read-only profiles may be used, and every non-sensitive
+operation must be a bounded read through the trusted AWS CLI path. Execute,
+create, modify, destroy, secret/configuration reads, custom endpoints, implicit
+profiles/regions, and unbounded paginated reads are denied.
+
+Outside Codex compatibility mode the upstream Claude behavior is retained,
+including its documented fail-open policy fallback. Account names stay in the
+private policy file; they are never hardcoded in this shareable gate.
 
 Local decision ledger: the gate appends one JSON line per inspected aws
 invocation (allow, ask, and deny alike) to AWS_OPS_LEDGER_FILE if set, else
@@ -60,7 +67,7 @@ invocation (allow, ask, and deny alike) to AWS_OPS_LEDGER_FILE if set, else
 text, argument values, tag values, or secret material. Ledger I/O is
 best-effort: a failure never raises, delays, or changes the gate decision.
 
-Configuration (optional, binding when present):
+Configuration (optional for Claude; required and fail-closed for Codex):
   ~/.claude/aws-ops.policy.json     override path: AWS_OPS_POLICY_FILE
   {
     "operator": {"name": "...", "stamp_prefix": "xx"},
@@ -69,22 +76,317 @@ Configuration (optional, binding when present):
     "ledger": true
   }
 
-The gate is a seatbelt, not the judgment: it fails open for commands it cannot
-parse as aws invocations, and fails conservative for operations it cannot
-classify.
+The gate is a seatbelt, not the judgment. The Claude lane retains the legacy
+parse fallback described in the threat model. The Codex lane first discovers a
+real executable candidate, ignores plain AWS text, and then fails closed on
+malformed/indirect candidates or operations it cannot classify.
 """
 
 import csv
+import fnmatch
 import json
 import os
 import re
+import stat
 import sys
 import unicodedata
 from datetime import datetime, timezone
 from pathlib import Path
 
+
+def default_trusted_aws_cli():
+    """Choose a known absolute AWS CLI path without consulting PATH."""
+    candidates = (
+        "/opt/homebrew/bin/aws",
+        "/usr/local/bin/aws",
+        "/usr/bin/aws",
+    )
+    for candidate in candidates:
+        if os.path.isfile(candidate) and os.access(candidate, os.X_OK):
+            return candidate
+    return candidates[0]
+
+
 STAMP_VAR = "AWS_SDK_UA_APP_ID"
 MAX_STAMP_LEN = 50
+
+# Codex's current hook runtime parses ``ask`` but does not pause execution for
+# approval. Keep the upstream classifier intact for Claude, and activate this
+# stricter local lane only when the Codex hook sets both variables.
+CODEX_RUNTIME = os.environ.get("AWS_OPS_HOOK_RUNTIME") == "codex"
+CODEX_READ_ONLY = CODEX_RUNTIME and os.environ.get("AWS_OPS_MODE") == "readonly"
+TRUSTED_AWS_CLI = os.environ.get("AWS_OPS_TRUSTED_AWS_CLI", default_trusted_aws_cli())
+MAX_CODEX_PAGE_ITEMS = 100
+MAX_CODEX_TIMEOUT_SECONDS = 120
+MAX_CODEX_COMMAND_CHARS = 131_072
+MAX_CODEX_SUBSTITUTION_MARKERS = 64
+MAX_CODEX_SEGMENT_MARKERS = 256
+MAX_CODEX_SHELL_WRAPPERS = 32
+MAX_POLICY_BYTES = 1_048_576
+MAX_INVENTORY_BYTES = 16_777_216
+MAX_AWS_ALIAS_BYTES = 262_144
+INVENTORY_PATH = (
+    Path(__file__).resolve().parent.parent
+    / "references"
+    / "inventory"
+    / "inventory.csv"
+)
+CODEX_STAMP = re.compile(r"[a-z0-9]+(?:-[a-z0-9]+)*\Z")
+SHELL_ASSIGNMENT = re.compile(r"([A-Za-z_][A-Za-z0-9_]*)=(.*)\Z", re.DOTALL)
+CODEX_ALLOWED_PREFIX_ASSIGNMENTS = {
+    STAMP_VAR,
+    "AWS_IGNORE_CONFIGURED_ENDPOINT_URLS",
+}
+AWS_GLOBAL_FLAGS = frozenset(
+    {
+        "--debug",
+        "--endpoint-url",
+        "--no-verify-ssl",
+        "--no-paginate",
+        "--output",
+        "--query",
+        "--profile",
+        "--region",
+        "--version",
+        "--color",
+        "--no-sign-request",
+        "--ca-bundle",
+        "--cli-read-timeout",
+        "--cli-connect-timeout",
+        "--cli-binary-format",
+        "--cli-error-format",
+        "--no-cli-pager",
+        "--cli-auto-prompt",
+        "--no-cli-auto-prompt",
+    }
+)
+CODEX_FORBIDDEN_GLOBAL_FLAGS = (
+    "--debug",
+    "--endpoint-url",
+    "--ca-bundle",
+    "--no-verify-ssl",
+    "--cli-auto-prompt",
+)
+CODEX_EXACT_ONLY_FLAGS = frozenset(
+    {
+        *CODEX_FORBIDDEN_GLOBAL_FLAGS,
+        "--profile",
+        "--region",
+        "--max-items",
+        "--page-size",
+        "--no-cli-pager",
+        "--no-cli-auto-prompt",
+        "--cli-read-timeout",
+        "--cli-connect-timeout",
+    }
+)
+CODEX_EXECUTION_WRAPPERS = {
+    "!",
+    "(",
+    "{",
+    "alias",
+    "arch",
+    "ash",
+    "bash",
+    "builtin",
+    "busybox",
+    "caffeinate",
+    "case",
+    "chroot",
+    "chpst",
+    "command",
+    "coproc",
+    "cp",
+    "do",
+    "doas",
+    "dash",
+    "daemonize",
+    "elif",
+    "else",
+    "env",
+    "eval",
+    "expect",
+    "exec",
+    "find",
+    "fish",
+    "flock",
+    "for",
+    "function",
+    "hash",
+    "if",
+    "install",
+    "ionice",
+    "ln",
+    "ksh",
+    "mv",
+    "nice",
+    "nocorrect",
+    "noglob",
+    "nohup",
+    "nsenter",
+    "parallel",
+    "perf",
+    "prlimit",
+    "rlwrap",
+    "runuser",
+    "script",
+    "screen",
+    "select",
+    "setpriv",
+    "setsid",
+    "setuidgid",
+    "sh",
+    "su",
+    "sudo",
+    "stdbuf",
+    "start-stop-daemon",
+    "strace",
+    "systemd-run",
+    "taskset",
+    "then",
+    "time",
+    "timeout",
+    "tmux",
+    "toybox",
+    "unshare",
+    "until",
+    "valgrind",
+    "watch",
+    "while",
+    "xargs",
+    "zsh",
+}
+CODEX_BODY_EXECUTION_WRAPPERS = frozenset(
+    {
+        "ash",
+        "bash",
+        "dash",
+        "doas",
+        "eval",
+        "expect",
+        "fish",
+        "ksh",
+        "runuser",
+        "screen",
+        "sh",
+        "su",
+        "sudo",
+        "systemd-run",
+        "tmux",
+        "zsh",
+    }
+)
+CODEX_TEXT_ARGUMENT_COMMANDS = frozenset(
+    {"awk", "cat", "echo", "grep", "printf", "rg", "sed"}
+)
+CODEX_EXECUTABLE_PREPARATION = frozenset(
+    {"alias", "cat", "cp", "dd", "hash", "install", "ln", "mv"}
+)
+CODEX_PIPELINE_EXECUTORS = {
+    "ash",
+    "bash",
+    "dash",
+    "eval",
+    "ksh",
+    "parallel",
+    "sh",
+    "xargs",
+    "zsh",
+}
+CODEX_CONTEXT_ENV = (
+    "HOME",
+    "PATH",
+    "BASH_ENV",
+    "ENV",
+    "ZDOTDIR",
+    "PYTHONHOME",
+    "PYTHONPATH",
+    "LD_PRELOAD",
+    "LD_LIBRARY_PATH",
+    "SSL_CERT_FILE",
+    "SSL_CERT_DIR",
+    "REQUESTS_CA_BUNDLE",
+    "CURL_CA_BUNDLE",
+    "BOTO_CONFIG",
+    "AWS_DATA_PATH",
+    "HTTPS_PROXY",
+    "HTTP_PROXY",
+    "ALL_PROXY",
+    "NO_PROXY",
+    "SSLKEYLOGFILE",
+    "https_proxy",
+    "http_proxy",
+    "all_proxy",
+    "no_proxy",
+)
+CODEX_POLICY_ALLOWLIST_ENV = frozenset(
+    {
+        "SSL_CERT_FILE",
+        "SSL_CERT_DIR",
+        "REQUESTS_CA_BUNDLE",
+        "CURL_CA_BUNDLE",
+        "HTTPS_PROXY",
+        "HTTP_PROXY",
+        "ALL_PROXY",
+        "NO_PROXY",
+        "https_proxy",
+        "http_proxy",
+        "all_proxy",
+        "no_proxy",
+    }
+)
+
+# These inherited variables can silently override the named profile, region,
+# TLS trust, credential source, or endpoint. Codex read-only sessions must be
+# launched clean instead of trying to reason about their precedence.
+UNSAFE_INHERITED_AWS_ENV = (
+    "AWS_ACCESS_KEY_ID",
+    "AWS_SECRET_ACCESS_KEY",
+    "AWS_SESSION_TOKEN",
+    "AWS_SECURITY_TOKEN",
+    "AWS_ROLE_ARN",
+    "AWS_ROLE_SESSION_NAME",
+    "AWS_WEB_IDENTITY_TOKEN_FILE",
+    "AWS_CONTAINER_CREDENTIALS_FULL_URI",
+    "AWS_CONTAINER_CREDENTIALS_RELATIVE_URI",
+    "AWS_CONTAINER_AUTHORIZATION_TOKEN",
+    "AWS_CONTAINER_AUTHORIZATION_TOKEN_FILE",
+    "AWS_PROFILE",
+    "AWS_DEFAULT_PROFILE",
+    "AWS_REGION",
+    "AWS_DEFAULT_REGION",
+    "AWS_ENDPOINT_URL",
+    "AWS_CONFIG_FILE",
+    "AWS_SHARED_CREDENTIALS_FILE",
+    "AWS_CA_BUNDLE",
+)
+UNSAFE_INHERITED_RUNTIME_ENV = (
+    "BASH_ENV",
+    "ENV",
+    "ZDOTDIR",
+    "PYTHONHOME",
+    "PYTHONPATH",
+    "PYTHONINSPECT",
+    "PYTHONSTARTUP",
+    "PYTHONWARNINGS",
+    "PYTHONBREAKPOINT",
+    "PYTHONUSERBASE",
+    "LD_PRELOAD",
+    "LD_LIBRARY_PATH",
+    "BOTO_CONFIG",
+    "AWS_DATA_PATH",
+    "SSLKEYLOGFILE",
+)
+CODEX_INTERNAL_AWS_ENV = frozenset(
+    {
+        "AWS_OPS_HOOK_RUNTIME",
+        "AWS_OPS_MODE",
+        "AWS_OPS_POLICY_FILE",
+        "AWS_OPS_LEDGER_FILE",
+        "AWS_OPS_UNSAFE_LAUNCH_ENV",
+        "AWS_OPS_TRUSTED_AWS_CLI",
+    }
+)
 
 # Flags whose value is the next token (skipped when locating service/operation).
 VALUE_FLAGS = {
@@ -98,6 +400,7 @@ VALUE_FLAGS = {
     "--cli-connect-timeout",
     "--cli-read-timeout",
     "--cli-binary-format",
+    "--cli-error-format",
     "--sts-regional-endpoints",
 }
 
@@ -394,7 +697,25 @@ def ledger_flush():
     try:
         if not _LEDGER_ENABLED or not _LEDGER:
             return
-        with open(_LEDGER_PATH, "a", encoding="utf-8") as fh:
+        # Create the metadata-only ledger as owner-readable/writable. ``open``
+        # alone would honor a permissive umask and can leave it world-readable.
+        flags = os.O_WRONLY | os.O_CREAT | os.O_APPEND
+        if hasattr(os, "O_CLOEXEC"):
+            flags |= os.O_CLOEXEC
+        if hasattr(os, "O_NOFOLLOW"):
+            flags |= os.O_NOFOLLOW
+        elif Path(_LEDGER_PATH).is_symlink():
+            return
+        if hasattr(os, "O_NONBLOCK"):
+            # A FIFO must not stall a blocking decision until the hook timeout.
+            flags |= os.O_NONBLOCK
+        fd = os.open(_LEDGER_PATH, flags, 0o600)
+        st = os.fstat(fd)
+        if not stat.S_ISREG(st.st_mode) or st.st_uid != os.getuid() or st.st_nlink != 1:
+            os.close(fd)
+            return
+        os.fchmod(fd, 0o600)
+        with os.fdopen(fd, "a", encoding="utf-8") as fh:
             for rec in _LEDGER:
                 fh.write(json.dumps({k: rec.get(k) for k in LEDGER_KEYS}) + "\n")
     except Exception:
@@ -402,6 +723,12 @@ def ledger_flush():
 
 
 def decision(action, reason, rec=None):
+    if CODEX_RUNTIME and action == "ask":
+        action = "deny"
+        reason = (
+            "Blocked fail-closed: this operation requires confirmation, and "
+            "Codex hook decisions cannot safely pause on 'ask'. " + reason
+        )
     if rec is not None:
         rec["decision"] = action
     if action == "deny":
@@ -437,22 +764,164 @@ def load_policy():
         return {}
 
 
-def load_inventory():
-    inv = (
-        Path(__file__).resolve().parent.parent
-        / "references"
-        / "inventory"
-        / "inventory.csv"
-    )
-    table = {}
+def load_policy_checked():
+    """Return (policy, error) for the Codex fail-closed lane."""
+    path = Path(
+        os.environ.get(
+            "AWS_OPS_POLICY_FILE",
+            os.path.expanduser("~/.claude/aws-ops.policy.json"),
+        )
+    ).expanduser()
     try:
-        with inv.open(newline="", encoding="utf-8") as fh:
+        flags = os.O_RDONLY
+        if hasattr(os, "O_CLOEXEC"):
+            flags |= os.O_CLOEXEC
+        if hasattr(os, "O_NOFOLLOW"):
+            flags |= os.O_NOFOLLOW
+        elif path.is_symlink():
+            return None, "private policy must not be a symbolic link"
+        if hasattr(os, "O_NONBLOCK"):
+            # A FIFO must not stall the hook until the host kills it fail-open.
+            flags |= os.O_NONBLOCK
+        fd = os.open(path, flags)
+        st = os.fstat(fd)
+        if not stat.S_ISREG(st.st_mode):
+            os.close(fd)
+            return None, "private policy must be a regular file"
+        if st.st_uid != os.getuid():
+            os.close(fd)
+            return None, "private policy must be owned by the current user"
+        if st.st_size > MAX_POLICY_BYTES:
+            os.close(fd)
+            return None, f"private policy exceeds {MAX_POLICY_BYTES} bytes"
+        if st.st_mode & 0o777 != 0o600:
+            os.close(fd)
+            return (
+                None,
+                f"policy permissions must be 600 (found {st.st_mode & 0o777:03o})",
+            )
+        with os.fdopen(fd, encoding="utf-8") as fh:
+            policy = json.load(fh)
+    except (OSError, ValueError) as exc:
+        return None, f"private policy is unavailable or invalid ({type(exc).__name__})"
+    if not isinstance(policy, dict):
+        return None, "private policy top level must be a JSON object"
+    profiles = policy.get("profiles")
+    operator = policy.get("operator")
+    if not isinstance(profiles, dict) or not profiles:
+        return None, "private policy must classify at least one profile"
+    if any(
+        v not in {"readonly", "admin", "frozen", "personal"} for v in profiles.values()
+    ):
+        return None, "private policy contains an unsupported profile class"
+    if "readonly" not in profiles.values():
+        return None, "private policy must classify at least one readonly profile"
+    if not isinstance(operator, dict):
+        return None, "private policy operator must be a JSON object"
+    prefix = operator.get("stamp_prefix")
+    if not isinstance(prefix, str) or not prefix.strip():
+        return None, "private policy must define operator.stamp_prefix"
+    if not CODEX_STAMP.fullmatch(prefix.strip()):
+        return None, "private policy stamp prefix must be lowercase kebab-case"
+    required_tags = policy.get("required_tags", {})
+    if not isinstance(required_tags, dict):
+        return None, "private policy required_tags must be a JSON object"
+    allowed_environment = policy.get("allowed_environment", {})
+    if not isinstance(allowed_environment, dict):
+        return None, "private policy allowed_environment must be a JSON object"
+    if any(name not in CODEX_POLICY_ALLOWLIST_ENV for name in allowed_environment):
+        return None, "private policy allowed_environment contains an unsupported key"
+    if any(
+        not isinstance(value, str) or not value
+        for value in allowed_environment.values()
+    ):
+        return (
+            None,
+            "private policy allowed_environment values must be non-empty strings",
+        )
+    return policy, None
+
+
+def load_inventory():
+    """Load the packaged inventory without blocking on hostile file types."""
+    table = {}
+    fd = None
+    try:
+        flags = os.O_RDONLY
+        if hasattr(os, "O_CLOEXEC"):
+            flags |= os.O_CLOEXEC
+        if hasattr(os, "O_NOFOLLOW"):
+            flags |= os.O_NOFOLLOW
+        elif INVENTORY_PATH.is_symlink():
+            return table
+        if hasattr(os, "O_NONBLOCK"):
+            # A damaged cache containing a FIFO must fail closed before the
+            # hook host's timeout can turn the failure into an allowed call.
+            flags |= os.O_NONBLOCK
+        fd = os.open(INVENTORY_PATH, flags)
+        st = os.fstat(fd)
+        if not stat.S_ISREG(st.st_mode) or st.st_size > MAX_INVENTORY_BYTES:
+            os.close(fd)
+            fd = None
+            return table
+        with os.fdopen(fd, newline="", encoding="utf-8") as fh:
+            fd = None
             for row in csv.reader(fh):
                 if len(row) >= 4 and row[0] != "service":
-                    table[(row[0], row[1])] = (row[2], row[3] == "1")
-    except OSError:
+                    paginated = len(row) >= 6 and row[5] == "1"
+                    table[(row[0], row[1])] = (
+                        row[2],
+                        row[3] == "1",
+                        paginated,
+                    )
+    except (OSError, UnicodeError, csv.Error):
         pass
+    finally:
+        if fd is not None:
+            os.close(fd)
     return table
+
+
+def codex_aws_alias_error():
+    """Reject AWS CLI aliases that can replace otherwise approved commands."""
+    path = Path.home() / ".aws" / "cli" / "alias"
+    fd = None
+    try:
+        flags = os.O_RDONLY
+        if hasattr(os, "O_CLOEXEC"):
+            flags |= os.O_CLOEXEC
+        if hasattr(os, "O_NOFOLLOW"):
+            flags |= os.O_NOFOLLOW
+        elif path.is_symlink():
+            return "the AWS CLI alias file must not be a symbolic link"
+        if hasattr(os, "O_NONBLOCK"):
+            flags |= os.O_NONBLOCK
+        fd = os.open(path, flags)
+        st = os.fstat(fd)
+        if not stat.S_ISREG(st.st_mode):
+            return "the AWS CLI alias file must be a regular file"
+        if st.st_uid != os.getuid():
+            return "the AWS CLI alias file must be owned by the current user"
+        if st.st_size > MAX_AWS_ALIAS_BYTES:
+            return f"the AWS CLI alias file exceeds {MAX_AWS_ALIAS_BYTES} bytes"
+        with os.fdopen(fd, encoding="utf-8") as fh:
+            fd = None
+            text = fh.read(MAX_AWS_ALIAS_BYTES + 1)
+    except FileNotFoundError:
+        return None
+    except (OSError, UnicodeError) as exc:
+        return f"the AWS CLI alias file is unsafe or unreadable ({type(exc).__name__})"
+    finally:
+        if fd is not None:
+            os.close(fd)
+    active = [
+        line
+        for line in text.splitlines()
+        if line.strip() and not line.lstrip().startswith(("#", ";"))
+    ]
+    if active:
+        return "AWS CLI aliases are configured and can replace approved commands"
+    return None
 
 
 def classify_op(service, op, inventory):
@@ -494,7 +963,7 @@ def parse_invocation(tokens, start):
         if t in ("&&", "||", ";", "|"):
             break
         if t.startswith("--"):
-            flag = t.split("=", 1)[0]
+            flag = canonical_aws_global_flag(t)
             if flag == "--profile":
                 profile = (
                     t.split("=", 1)[1]
@@ -512,10 +981,355 @@ def parse_invocation(tokens, start):
             words.append(t)
         i += 1
     service = words[0] if words else None
-    op = words[1] if len(words) > 1 else "help"
+    op = words[1] if len(words) > 1 else ("help" if service == "help" else "")
     if service in (None, "--version", "-v"):
         service, op = "help", "help"
     return service, op, profile, stamp
+
+
+def explicit_flag_value(tokens, start, wanted):
+    """Return the last explicit value, matching AWS CLI override behavior."""
+    found = None
+    i = start + 1
+    while i < len(tokens):
+        token = tokens[i]
+        if token in ("&&", "||", ";", "|"):
+            break
+        name, separator, inline = token.partition("=")
+        if canonical_aws_global_flag(name) == wanted:
+            if separator:
+                found = inline
+                i += 1
+                continue
+            found = tokens[i + 1] if i + 1 < len(tokens) else None
+            i += 2
+            continue
+        i += 1
+    return found
+
+
+def inline_assignment(tokens, start, name, value=None):
+    """Check the last NAME=value before this invocation (shell precedence)."""
+    prefix = name + "="
+    found = None
+    for token in tokens[:start]:
+        if not token.startswith(prefix):
+            continue
+        found = token.split("=", 1)[1].strip("'\"")
+    return found is not None and (value is None or found == value)
+
+
+def codex_brace_variants(value, limit=32):
+    """Expand a small literal shell-brace expression for AWS path detection."""
+    variants = [value]
+    while len(variants) <= limit:
+        expanded = False
+        next_variants = []
+        for variant in variants:
+            match = re.search(r"\{([^{}]*,[^{}]*)\}", variant)
+            if not match:
+                next_variants.append(variant)
+                continue
+            expanded = True
+            for option in match.group(1).split(","):
+                next_variants.append(
+                    variant[: match.start()] + option + variant[match.end() :]
+                )
+                if len(next_variants) > limit:
+                    return []
+        variants = next_variants
+        if not expanded:
+            return variants
+    return []
+
+
+def codex_shell_expanded_aws_word(token):
+    """Detect a command word that shell expansion can turn into an AWS CLI."""
+    if not CODEX_READ_ONLY or not re.search(r"[*?\[\](){}]", token):
+        return False
+    candidates = codex_brace_variants(token) or [token]
+    trusted = os.path.normpath(TRUSTED_AWS_CLI)
+    for candidate in candidates:
+        # zsh appends glob qualifiers such as ``(N)`` or ``(@)`` after the
+        # pathname pattern. Strip that suffix before matching the executable.
+        pathname = re.sub(r"\([^/]*\)\Z", "", candidate)
+        basename = os.path.basename(pathname)
+        # ``fnmatch`` covers pathname globs such as aw?, a*, and a[w]s.
+        if fnmatch.fnmatchcase("aws", basename) or fnmatch.fnmatchcase(
+            trusted, pathname
+        ):
+            return True
+    return False
+
+
+def is_aws_token(token):
+    """Whether a shell token names the AWS CLI executable."""
+    if SHELL_ASSIGNMENT.fullmatch(token):
+        return False
+    if codex_shell_expanded_aws_word(token):
+        return True
+    if token == "aws" or (token.endswith("/aws") and "://" not in token):
+        return True
+    if CODEX_READ_ONLY and "/" in token and "://" not in token:
+        try:
+            return os.path.realpath(token) == os.path.realpath(TRUSTED_AWS_CLI)
+        except (OSError, ValueError):
+            return False
+    return False
+
+
+def command_word_index(tokens):
+    """Return the direct command word after leading shell assignments."""
+    for index, token in enumerate(tokens):
+        if not SHELL_ASSIGNMENT.fullmatch(token):
+            return index
+    return None
+
+
+def codex_execution_wrapper(token):
+    """Whether a command word can execute or dispatch a later argument/body."""
+    executable = os.path.basename(token)
+    return (
+        token.startswith("$")
+        or token.startswith("\x60")
+        or executable in CODEX_EXECUTION_WRAPPERS
+        or bool(
+            re.fullmatch(r"[A-Za-z_][A-Za-z0-9_]*\(\)\{?", executable)
+            or re.match(r"^(?:\d*)?(?:<|>>?|<>|>\||<&|>&)", token)
+        )
+    )
+
+
+def codex_wrapped_text_command(tokens, index):
+    """Recognize `env ... <text-tool> aws` where aws is inert search data."""
+    if index is None or os.path.basename(tokens[index]) != "env":
+        return False
+    nested_index = index + 1
+    while nested_index < len(tokens) and (
+        tokens[nested_index].startswith("-")
+        or SHELL_ASSIGNMENT.fullmatch(tokens[nested_index])
+    ):
+        nested_index += 1
+    return (
+        nested_index < len(tokens)
+        and os.path.basename(tokens[nested_index]) in CODEX_TEXT_ARGUMENT_COMMANDS
+    )
+
+
+def codex_prefix_assignment_error(tokens, start):
+    """Reject every Codex prefix assignment except the two protocol fields."""
+    for token in tokens[:start]:
+        match = SHELL_ASSIGNMENT.fullmatch(token)
+        if not match:
+            return "AWS CLI wrappers and shell control words are not allowed"
+        if match.group(1) not in CODEX_ALLOWED_PREFIX_ASSIGNMENTS:
+            return (
+                f"inline assignment {match.group(1)} is not allowed before the "
+                "Codex AWS CLI"
+            )
+    return None
+
+
+def codex_literal_flag_value(value):
+    """True only for a non-empty scalar flag value with no shell expansion."""
+    if not isinstance(value, str) or not value or value.startswith("-"):
+        return False
+    return not re.search(r"[$\x60;|&<>(){}]", value)
+
+
+def canonical_aws_global_flag(token):
+    """Resolve the unique long-option abbreviations accepted by AWS argparse."""
+    name = token.partition("=")[0]
+    if name in AWS_GLOBAL_FLAGS or not name.startswith("--") or len(name) <= 2:
+        return name
+    matches = [full for full in AWS_GLOBAL_FLAGS if full.startswith(name)]
+    return matches[0] if len(matches) == 1 else name
+
+
+def codex_forbidden_global_flag(token):
+    """Match a forbidden global flag or any argparse-style abbreviation."""
+    return canonical_aws_global_flag(token) in CODEX_FORBIDDEN_GLOBAL_FLAGS
+
+
+def codex_abbreviated_guard_flag(token):
+    """Reject abbreviations of flags that uphold Codex read-only invariants."""
+    name = token.partition("=")[0]
+    if not name.startswith("--") or len(name) <= 2 or name in CODEX_EXACT_ONLY_FLAGS:
+        return False
+    return any(full.startswith(name) for full in CODEX_EXACT_ONLY_FLAGS)
+
+
+def command_has_global_flag(command, wanted):
+    """Find an AWS global flag, including a unique argparse abbreviation."""
+    for segment in re.split(r"[;\r\n]|&&|\|\||\||&(?!&)", command):
+        if any(
+            canonical_aws_global_flag(token) == wanted for token in tokenize(segment)
+        ):
+            return True
+    return False
+
+
+def guarded_operation_flag(tokens, full_name, minimum_prefix):
+    """Match an exact high-impact operation flag or a plausible abbreviation."""
+    for token in tokens:
+        name = token.partition("=")[0]
+        if name == full_name:
+            return True
+        if len(name) >= len(minimum_prefix) and full_name.startswith(name):
+            return True
+    return False
+
+
+def codex_command_complexity_error(command):
+    """Bound recursive shell scanning before any potentially superlinear work."""
+    if len(command) > MAX_CODEX_COMMAND_CHARS:
+        return f"command exceeds {MAX_CODEX_COMMAND_CHARS} characters"
+    substitution_markers = sum(
+        command.count(marker) for marker in ("$(", "<(", ">(", "\x60")
+    )
+    if substitution_markers > MAX_CODEX_SUBSTITUTION_MARKERS:
+        return (
+            "command contains too many command/process substitutions "
+            f"({substitution_markers} > {MAX_CODEX_SUBSTITUTION_MARKERS})"
+        )
+    segment_markers = sum(command.count(marker) for marker in (";", "\n", "|", "&"))
+    if segment_markers > MAX_CODEX_SEGMENT_MARKERS:
+        return (
+            "command contains too many shell segments "
+            f"({segment_markers} > {MAX_CODEX_SEGMENT_MARKERS})"
+        )
+    shell_wrappers = len(
+        re.findall(r"(?<![A-Za-z0-9_/])(?:sh|bash|zsh|dash|ksh|ash)\b", command)
+    )
+    if shell_wrappers > MAX_CODEX_SHELL_WRAPPERS:
+        return (
+            "command contains too many nested shell wrappers "
+            f"({shell_wrappers} > {MAX_CODEX_SHELL_WRAPPERS})"
+        )
+    return None
+
+
+def codex_dynamic_word_matches_aws(word):
+    """Whether shell expansion can turn one token into the trusted AWS CLI."""
+    trusted = os.path.normpath(TRUSTED_AWS_CLI)
+    if not isinstance(word, str) or not ("$" in word or "\x60" in word):
+        return False
+    if word.startswith("$") and "\\" in word:
+        try:
+            decoded = bytes(word[1:], "utf-8").decode("unicode_escape")
+        except (UnicodeDecodeError, UnicodeEncodeError, ValueError):
+            decoded = ""
+        if decoded and is_aws_token(decoded):
+            return True
+    pattern = re.sub(r"\$\([^)]*\)|\x60[^\x60]*\x60", "*", word)
+    pattern = re.sub(
+        r"\$\{[^}]*\}|\$(?:[@*#?$!_-]|[0-9]+|[A-Za-z_][A-Za-z0-9_]*)",
+        "*",
+        pattern,
+    )
+    basename_pattern = os.path.basename(pattern)
+    return basename_pattern != "*" and (
+        fnmatch.fnmatchcase(trusted, pattern)
+        or fnmatch.fnmatchcase("aws", basename_pattern)
+    )
+
+
+def codex_unsafe_dynamic_command_word(command):
+    """Find a dynamic command word that can resolve to the AWS CLI."""
+    for segment in re.split(r"[;\r\n]|&&|\|\||\||&(?!&)", command):
+        tokens = tokenize(segment)
+        index = command_word_index(tokens)
+        if index is None:
+            continue
+        word = tokens[index]
+        if word.startswith("="):
+            if word == "=aws" or word.endswith("/aws"):
+                return "zsh =command lookup"
+            continue
+        if "$" in word or "\x60" in word:
+            if "aws" in re.sub(r"[\"']", "", segment).lower():
+                return "parameter or command substitution in the command word"
+            if codex_dynamic_word_matches_aws(word):
+                return "parameter or command substitution in the command word"
+    return None
+
+
+def codex_dynamic_aws_invocation(command):
+    """Detect simple variable-built AWS command words and deny them.
+
+    This recognizes literal assignments and simple shell variable expansion.
+    It catches common accidental indirection without pretending to be a
+    complete shell interpreter.
+    """
+    values = {}
+    variable = re.compile(
+        r"\$(?:\{([A-Za-z_][A-Za-z0-9_]*)\}|([A-Za-z_][A-Za-z0-9_]*))"
+    )
+    for segment in re.split(r"[;\r\n]|&&|\|\||\||&(?!&)", command):
+        tokens = tokenize(segment)
+        if not tokens:
+            continue
+        if os.path.basename(tokens[0]) == "unset":
+            for name in tokens[1:]:
+                if re.fullmatch(r"[A-Za-z_][A-Za-z0-9_]*", name):
+                    values.pop(name, None)
+            continue
+        for token in tokens:
+            match = SHELL_ASSIGNMENT.fullmatch(token)
+            if match:
+                values[match.group(1)] = match.group(2)
+        index = command_word_index(tokens)
+        if index is None:
+            continue
+        word = tokens[index]
+
+        def expand(match):
+            name = match.group(1) or match.group(2)
+            return values.get(name, os.environ.get(name, match.group(0)))
+
+        expanded = variable.sub(expand, word)
+        if expanded != word and is_aws_token(expanded):
+            return True
+    return False
+
+
+def codex_indirect_aws_wrapper(command):
+    """Detect an execution wrapper around AWS even when AWS is quoted data."""
+    aws_data_seen = False
+    pipeline_executor_seen = False
+    for segment in re.split(r"[;\r\n]|&&|\|\||\||&(?!&)", command):
+        tokens = tokenize(segment)
+        if any(is_aws_token(token) for token in tokens):
+            aws_data_seen = True
+        index = command_word_index(tokens)
+        if index is None:
+            continue
+        executable = tokens[index]
+        executable_name = os.path.basename(executable)
+        if executable_name in CODEX_PIPELINE_EXECUTORS:
+            pipeline_executor_seen = True
+        if executable_name in CODEX_EXECUTABLE_PREPARATION:
+            for token in tokens[index + 1 :]:
+                candidate = token.split("=", 1)[1] if "=" in token else token
+                if is_aws_token(candidate) or codex_dynamic_word_matches_aws(candidate):
+                    return True
+        if not codex_execution_wrapper(executable):
+            continue
+        nested_index = index + 1
+        if codex_wrapped_text_command(tokens, index):
+            continue
+        if any(is_aws_token(token) for token in tokens[nested_index:]):
+            return True
+        if (
+            executable_name in CODEX_BODY_EXECUTION_WRAPPERS
+            and "aws" in re.sub(r"[\"']", "", segment).lower()
+        ):
+            return True
+    # Data-producing and data-consuming pipeline segments are parsed
+    # independently. Correlate them so `printf /trusted/aws | xargs ...` (or
+    # `which aws | xargs ...`) cannot hide the executable from the direct-path
+    # check merely by putting it in an earlier segment.
+    return aws_data_seen and pipeline_executor_seen
 
 
 # A resource-NAME flag the operator uses to name something they create:
@@ -778,24 +1592,217 @@ def update_carried_profile(tokens, carried):
     return carried
 
 
+def codex_persistent_context_override(command):
+    """Detect shell context changes that persist into a later AWS segment."""
+
+    def sensitive_name(name):
+        return (
+            name in CODEX_CONTEXT_ENV
+            or name in UNSAFE_INHERITED_AWS_ENV
+            or name.startswith("AWS_")
+            or name.startswith("AWS_ENDPOINT_URL_")
+            or name.startswith("DYLD_")
+        )
+
+    for segment in re.split(r"[;\r\n]|&&|\|\||\||&(?!&)", command):
+        tokens = tokenize(segment)
+        if not tokens:
+            continue
+        index = command_word_index(tokens)
+        if index is None:
+            if any(
+                (match := SHELL_ASSIGNMENT.fullmatch(token))
+                and sensitive_name(match.group(1))
+                for token in tokens
+            ):
+                return True
+            continue
+        executable = os.path.basename(tokens[index])
+        if executable == "unset":
+            if any(sensitive_name(name) for name in tokens[index + 1 :]):
+                return True
+            continue
+        exporting = executable in {"export", "readonly"} or (
+            executable in {"declare", "typeset"} and "-x" in tokens[index + 1 :]
+        )
+        if exporting and any(
+            (match := SHELL_ASSIGNMENT.fullmatch(token))
+            and sensitive_name(match.group(1))
+            for token in tokens[index + 1 :]
+        ):
+            return True
+        args = tokens[index + 1 :]
+        if executable == "set" and (
+            "-a" in args
+            or "allexport" in args
+            or any(
+                args[position] == "-o" and args[position + 1] == "allexport"
+                for position in range(len(args) - 1)
+            )
+        ):
+            return True
+    return False
+
+
+def codex_aws_execution_intent(command):
+    """Discover an executable AWS candidate before policy/environment checks."""
+    if (
+        codex_dynamic_aws_invocation(command)
+        or codex_indirect_aws_wrapper(command)
+        or codex_unsafe_dynamic_command_word(command)
+    ):
+        return True
+    units, seen, queue = [], set(), [command]
+    while queue and len(units) < 4096:
+        unit = queue.pop(0)
+        if unit in seen:
+            continue
+        seen.add(unit)
+        units.append(unit)
+        for body in list(extract_substitutions(unit)) + list(extract_shell_c(unit)):
+            if body not in seen:
+                queue.append(body)
+    for unit in units:
+        unit = re.sub(r"\\\r?\n", " ", unit)
+        for segment in re.split(r"[;\r\n]|&&|\|\||\||&(?!&)", unit):
+            tokens = tokenize(segment)
+            index = command_word_index(tokens)
+            if index is None:
+                continue
+            if is_aws_token(tokens[index]):
+                return True
+            if codex_execution_wrapper(tokens[index]) and any(
+                is_aws_token(token) for token in tokens[index + 1 :]
+            ):
+                return True
+    return False
+
+
 def main():
     global _LEDGER_ENABLED
+    raw_event = sys.stdin.read()
     try:
-        event = json.load(sys.stdin)
-    except ValueError:
+        event = json.loads(raw_event)
+    except (TypeError, ValueError):
+        if CODEX_RUNTIME:
+            decision(
+                "deny",
+                "Blocked fail-closed: the Codex Bash hook event was not valid JSON.",
+            )
+        sys.exit(0)
+    if not isinstance(event, dict):
+        if CODEX_RUNTIME:
+            decision(
+                "deny",
+                "Blocked fail-closed: the Codex Bash hook event must be a JSON object.",
+            )
         sys.exit(0)
     if event.get("tool_name") != "Bash":
         sys.exit(0)
-    cmd = (event.get("tool_input") or {}).get("command") or ""
-    # Pre-filter (a cheap perf gate only): skip the full parse when the command,
-    # with quotes removed, contains no "aws" substring at all. Quote removal
-    # keeps quote-split ("aws", a"w"s) and option-fused (-c'aws...') executables
-    # in scope; a broader match here only ever means more commands are fully
-    # parsed (then correctly classified or ignored), never fewer.
-    if "aws" not in re.sub(r"[\"']", "", cmd).lower():
+    tool_input = event.get("tool_input")
+    if not isinstance(tool_input, dict):
+        if CODEX_RUNTIME:
+            decision(
+                "deny",
+                "Blocked fail-closed: the Codex Bash hook input is malformed.",
+            )
         sys.exit(0)
+    cmd = tool_input.get("command") or ""
+    if not isinstance(cmd, str):
+        if CODEX_RUNTIME:
+            decision(
+                "deny",
+                "Blocked fail-closed: the Codex Bash command must be text.",
+            )
+        sys.exit(0)
+    if CODEX_READ_ONLY and tool_input.get("tty") is True:
+        decision(
+            "deny",
+            "Blocked fail-closed: interactive PTY commands are disabled while the "
+            "Codex AWS guard is active because later write_stdin input does not "
+            "receive another PreToolUse check.",
+        )
+    # Discover a real executable candidate before loading private policy or
+    # rejecting inherited AWS environment. Plain documentation/search text that
+    # merely contains "aws" must remain outside the gate.
+    if CODEX_READ_ONLY:
+        complexity_error = codex_command_complexity_error(cmd)
+        if complexity_error:
+            shallow_evidence = "aws" in re.sub(r"[\"']", "", cmd).lower()
+            shallow_evidence = (
+                shallow_evidence
+                or codex_dynamic_aws_invocation(cmd)
+                or bool(codex_unsafe_dynamic_command_word(cmd))
+            )
+            if not shallow_evidence:
+                sys.exit(0)
+            decision(
+                "deny",
+                "Blocked fail-closed: shell command complexity exceeds the "
+                f"Codex AWS gate limits ({complexity_error}). Split it into "
+                "smaller, directly inspectable commands.",
+            )
+        codex_dynamic = codex_dynamic_aws_invocation(cmd)
+        if not codex_aws_execution_intent(cmd):
+            sys.exit(0)
+        dynamic_word_error = codex_unsafe_dynamic_command_word(cmd)
+        if dynamic_word_error:
+            decision(
+                "deny",
+                "Blocked fail-closed: dynamic command names are not allowed in "
+                f"the Codex read-only lane ({dynamic_word_error}). Use a literal "
+                "executable path.",
+            )
+    else:
+        codex_dynamic = False
+        if "aws" not in re.sub(r"[\"']", "", cmd).lower():
+            sys.exit(0)
 
-    policy = load_policy()
+    if CODEX_READ_ONLY:
+        policy, policy_error = load_policy_checked()
+        if policy_error:
+            decision("deny", f"Blocked fail-closed: {policy_error}.")
+        allowed_environment = policy.get("allowed_environment", {})
+        inherited = [name for name in UNSAFE_INHERITED_AWS_ENV if os.environ.get(name)]
+        inherited += [
+            name for name in UNSAFE_INHERITED_RUNTIME_ENV if os.environ.get(name)
+        ]
+        inherited += [
+            name
+            for name, value in os.environ.items()
+            if (
+                (name.startswith("AWS_") and name not in CODEX_INTERNAL_AWS_ENV)
+                or name.startswith("DYLD_")
+                or name.startswith("BASH_FUNC_")
+            )
+            and value
+        ]
+        launch_context = os.environ.get("AWS_OPS_UNSAFE_LAUNCH_ENV", "")
+        inherited += [name for name in launch_context.split(",") if name]
+        inherited += [
+            name
+            for name in CODEX_POLICY_ALLOWLIST_ENV
+            if os.environ.get(name)
+            and allowed_environment.get(name) != os.environ.get(name)
+        ]
+        inherited = sorted(set(inherited))
+        if inherited:
+            decision(
+                "deny",
+                "Blocked fail-closed: inherited AWS environment overrides are set "
+                f"({', '.join(inherited)}). Start the task with a clean AWS environment.",
+            )
+        if codex_persistent_context_override(cmd):
+            decision(
+                "deny",
+                "Blocked fail-closed: the command persistently changes AWS, HOME, "
+                "PATH, loader, runtime, or TLS context around the Codex AWS CLI.",
+            )
+        alias_error = codex_aws_alias_error()
+        if alias_error:
+            decision("deny", f"Blocked fail-closed: {alias_error}.")
+    else:
+        policy = load_policy()
     _LEDGER_ENABLED = policy.get("ledger") is not False
     profiles = policy.get("profiles") or {}
     stamp_prefix = ((policy.get("operator") or {}).get("stamp_prefix") or "").strip()
@@ -811,7 +1818,20 @@ def main():
     }
     inventory = load_inventory()
 
-    if re.search(r"--no-verify-ssl\b", cmd):
+    if CODEX_READ_ONLY and not inventory:
+        decision(
+            "deny",
+            "Blocked fail-closed: the AWS operation inventory is missing or unreadable.",
+        )
+
+    if CODEX_READ_ONLY and codex_indirect_aws_wrapper(cmd):
+        decision(
+            "deny",
+            "Blocked fail-closed: wrappers, dispatchers, dynamic shells, and "
+            "indirect execution around the Codex AWS CLI are not allowed.",
+        )
+
+    if command_has_global_flag(cmd, "--no-verify-ssl"):
         decision(
             "deny",
             "TLS verification must never be disabled (--no-verify-ssl). Remove the flag.",
@@ -820,6 +1840,7 @@ def main():
     worst = "read"
     any_sensitive = False
     reasons_ask = []
+    inspected_invocations = 0
 
     # Scan units: the command itself, every command/process-substitution body,
     # and every inline `sh -c`/`bash -c` script, so an aws invocation hidden by
@@ -881,28 +1902,56 @@ def main():
             tokens = tokenize(seg)
             # Detect the aws executable from the TOKENS (after the shell strips
             # quotes), not the raw string, so "aws"/'aws'/a"w"s are recognized.
-            if not any(
-                tok == "aws" or (tok.endswith("/aws") and "://" not in tok)
-                for tok in tokens
-            ):
+            if not any(is_aws_token(tok) for tok in tokens):
                 carried = update_carried_profile(tokens, carried)
                 if closes_loop and loop_depth > 0:
                     loop_depth -= 1
                 continue
+            direct_index = command_word_index(tokens)
             for idx, tok in enumerate(tokens):
                 # The executable is the aws CLI when the token is `aws` or a
                 # filesystem path ending in /aws (./aws, /usr/bin/aws). A URI
                 # that merely ends in /aws (s3://.../aws) is not an invocation.
-                if not (tok == "aws" or (tok.endswith("/aws") and "://" not in tok)):
+                if not is_aws_token(tok):
                     continue
+                if CODEX_READ_ONLY and idx != direct_index:
+                    direct_token = (
+                        tokens[direct_index] if direct_index is not None else ""
+                    )
+                    # A second aws-looking token after a real direct invocation
+                    # is an argument. For other commands it is normally data;
+                    # only known execution wrappers are blocked here.
+                    if is_aws_token(direct_token):
+                        continue
+                    if codex_wrapped_text_command(tokens, direct_index):
+                        continue
+                    if codex_execution_wrapper(direct_token):
+                        decision(
+                            "deny",
+                            "Blocked fail-closed: wrappers, dispatchers, and indirect "
+                            "execution around the Codex AWS CLI are not allowed.",
+                        )
+                    continue
+                if CODEX_READ_ONLY:
+                    prefix_error = codex_prefix_assignment_error(tokens, idx)
+                    if prefix_error:
+                        decision("deny", f"Blocked fail-closed: {prefix_error}.")
+                inspected_invocations += 1
                 n_reasons_before = len(reasons_ask)
                 service, op, profile, stamp = parse_invocation(tokens, idx)
                 cls, sens = classify_op(service, op, inventory)
 
                 # Flag escalations local to this segment
-                if service == "s3" and op == "sync" and "--delete" in tokens:
+                if (
+                    service == "s3"
+                    and op == "sync"
+                    and guarded_operation_flag(tokens, "--delete", "--del")
+                ):
                     cls, sens = "destroy", True
-                if re.search(r"--force\b", seg) and cls in ("modify", "destroy"):
+                if guarded_operation_flag(tokens, "--force", "--for") and cls in (
+                    "modify",
+                    "destroy",
+                ):
                     sens = True
                 if re.search(
                     r"--acl[=\s]\s*[\"']?"
@@ -910,9 +1959,10 @@ def main():
                     seg,
                 ):
                     sens = True
-                if (
-                    re.search(r"--with-decryption\b", seg)
-                    and "--no-with-decryption" not in seg
+                if guarded_operation_flag(
+                    tokens, "--with-decryption", "--with-d"
+                ) and not guarded_operation_flag(
+                    tokens, "--no-with-decryption", "--no-with-d"
                 ):
                     sens = True
 
@@ -923,7 +1973,7 @@ def main():
                 # single target -- the confirmation prompt must say so rather than
                 # repeat the single-target "look before you delete" line.
                 if cls == "destroy" and (
-                    re.search(r"--recursive\b", seg)
+                    guarded_operation_flag(tokens, "--recursive", "--rec")
                     or (
                         service == "s3"
                         and re.search(r"--(?:include|exclude)[=\s]", seg)
@@ -970,6 +2020,211 @@ def main():
                 rec = ledger_record(
                     service, op, cls, sens, stamp, effective_profile, prof_class
                 )
+
+                if (
+                    service == "logs"
+                    and op == "tail"
+                    and guarded_operation_flag(tokens, "--follow", "--fol")
+                ):
+                    decision(
+                        "deny",
+                        "Unbounded 'aws logs tail --follow' streams are disabled. "
+                        "Use a finite time window or a bounded paginated logs query.",
+                        rec,
+                    )
+
+                if CODEX_READ_ONLY and service == "s3" and op == "ls":
+                    decision(
+                        "deny",
+                        "'aws s3 ls' cannot enforce a total item bound. Use a pointed "
+                        "'aws s3api list-*' operation with matching --max-items and "
+                        "--page-size values instead.",
+                        rec,
+                    )
+
+                if CODEX_READ_ONLY and service == "logs" and op == "tail":
+                    decision(
+                        "deny",
+                        "'aws logs tail' cannot enforce a total event bound. Use "
+                        "'aws logs filter-log-events' with matching --max-items and "
+                        "--page-size values instead.",
+                        rec,
+                    )
+
+                if CODEX_READ_ONLY:
+                    if any(codex_abbreviated_guard_flag(token) for token in tokens):
+                        decision(
+                            "deny",
+                            "Codex AWS reads require exact invariant flag names; "
+                            "argparse-style abbreviations are not allowed.",
+                            rec,
+                        )
+                    if tok != TRUSTED_AWS_CLI:
+                        decision(
+                            "deny",
+                            "Codex AWS reads must invoke the trusted CLI by its exact "
+                            f"path: {TRUSTED_AWS_CLI}.",
+                            rec,
+                        )
+                    if service == "configure":
+                        decision(
+                            "deny",
+                            "'aws configure' is disabled in the Codex read-only lane; "
+                            "it can expose or change credential configuration.",
+                            rec,
+                        )
+                    known_operation = (service, op) in inventory or op in (
+                        "help",
+                        "wait",
+                    )
+                    if not known_operation:
+                        decision(
+                            "deny",
+                            f"'aws {service} {op}' is absent from the pinned operation "
+                            "inventory and cannot run in the Codex read-only lane.",
+                            rec,
+                        )
+                    if cls != "read":
+                        decision(
+                            "deny",
+                            f"Codex AWS mode is read-only: 'aws {service} {op}' is "
+                            f"classified as {cls}. Plan the change, but do not execute it.",
+                            rec,
+                        )
+                    if sens:
+                        decision(
+                            "deny",
+                            f"'aws {service} {op}' is a sensitive read and may return "
+                            "credentials, secrets, or privileged material; it is disabled.",
+                            rec,
+                        )
+
+                    explicit_profile = explicit_flag_value(tokens, idx, "--profile")
+                    if not codex_literal_flag_value(explicit_profile):
+                        decision(
+                            "deny",
+                            "Codex AWS reads require a literal, non-empty --profile "
+                            "on every invocation.",
+                            rec,
+                        )
+                    if profiles.get(explicit_profile) != "readonly":
+                        decision(
+                            "deny",
+                            f"Profile '{explicit_profile}' is not classified readonly in "
+                            "the private policy. Admin, frozen, personal, and unknown "
+                            "profiles are blocked.",
+                            rec,
+                        )
+                    region = explicit_flag_value(tokens, idx, "--region")
+                    if not codex_literal_flag_value(region) or not re.fullmatch(
+                        r"[a-z0-9][a-z0-9-]*", region
+                    ):
+                        decision(
+                            "deny",
+                            "Codex AWS reads require a literal, non-empty --region "
+                            "on every invocation.",
+                            rec,
+                        )
+                    if not stamp:
+                        decision(
+                            "deny",
+                            f"Codex AWS reads require inline {STAMP_VAR}=<operator-task> "
+                            "on every invocation.",
+                            rec,
+                        )
+                    if not CODEX_STAMP.fullmatch(stamp):
+                        decision(
+                            "deny",
+                            "Purpose stamps must be lowercase kebab-case with no spaces "
+                            "or shell expansion.",
+                            rec,
+                        )
+                    if not inline_assignment(
+                        tokens, idx, "AWS_IGNORE_CONFIGURED_ENDPOINT_URLS", "true"
+                    ):
+                        decision(
+                            "deny",
+                            "Codex AWS reads require inline "
+                            "AWS_IGNORE_CONFIGURED_ENDPOINT_URLS=true so configured or "
+                            "environment endpoints cannot redirect credentials.",
+                            rec,
+                        )
+                    if any(codex_forbidden_global_flag(token) for token in tokens):
+                        decision(
+                            "deny",
+                            "Custom endpoints, CA bundles, disabled TLS verification, "
+                            "and abbreviations of those flags are not allowed in the "
+                            "Codex AWS lane.",
+                            rec,
+                        )
+                    for timeout_flag in (
+                        "--cli-read-timeout",
+                        "--cli-connect-timeout",
+                    ):
+                        if not any(
+                            canonical_aws_global_flag(token) == timeout_flag
+                            for token in tokens
+                        ):
+                            continue
+                        timeout_value = explicit_flag_value(tokens, idx, timeout_flag)
+                        if (
+                            not timeout_value
+                            or not timeout_value.isdigit()
+                            or not 1 <= int(timeout_value) <= MAX_CODEX_TIMEOUT_SECONDS
+                        ):
+                            decision(
+                                "deny",
+                                "Codex AWS CLI timeouts must be literal integers between "
+                                f"1 and {MAX_CODEX_TIMEOUT_SECONDS} seconds.",
+                                rec,
+                            )
+                    if "--no-cli-pager" not in tokens:
+                        decision(
+                            "deny",
+                            "Codex AWS reads require --no-cli-pager for deterministic, "
+                            "non-interactive output.",
+                            rec,
+                        )
+                    if "--no-cli-auto-prompt" not in tokens:
+                        decision(
+                            "deny",
+                            "Codex AWS reads require --no-cli-auto-prompt so local "
+                            "AWS config cannot turn a read into an interactive prompt.",
+                            rec,
+                        )
+                    meta = inventory.get((service, op))
+                    paginated = bool(meta and len(meta) >= 3 and meta[2])
+                    if paginated:
+                        max_items = explicit_flag_value(tokens, idx, "--max-items")
+                        if not max_items or not re.fullmatch(r"[0-9]+", max_items):
+                            decision(
+                                "deny",
+                                "Paginated Codex AWS reads require an explicit numeric "
+                                f"--max-items between 1 and {MAX_CODEX_PAGE_ITEMS}.",
+                                rec,
+                            )
+                        if not (1 <= int(max_items) <= MAX_CODEX_PAGE_ITEMS):
+                            decision(
+                                "deny",
+                                "Paginated Codex AWS reads require --max-items between "
+                                f"1 and {MAX_CODEX_PAGE_ITEMS}.",
+                                rec,
+                            )
+                        page_size = explicit_flag_value(tokens, idx, "--page-size")
+                        if not page_size or not re.fullmatch(r"[0-9]+", page_size):
+                            decision(
+                                "deny",
+                                "Paginated Codex AWS reads require an explicit numeric "
+                                "--page-size equal to --max-items.",
+                                rec,
+                            )
+                        if page_size != max_items:
+                            decision(
+                                "deny",
+                                "Paginated Codex AWS reads require --page-size and "
+                                "--max-items to use the same bounded value.",
+                                rec,
+                            )
 
                 frozen = prof_class == "frozen" or (
                     effective_profile and effective_profile in frozen_names
@@ -1067,9 +2322,9 @@ def main():
                                 rec,
                             )
 
-                m = re.search(r"--endpoint-url[=\s]\s*(\S+)", seg)
-                if m:
-                    url = m.group(1).strip("'\"")
+                endpoint_url = explicit_flag_value(tokens, idx, "--endpoint-url")
+                if endpoint_url:
+                    url = endpoint_url.strip("'\"")
                     host = re.sub(r"^https?://", "", url).split("/")[0].split(":")[0]
                     if not (
                         host.endswith(".amazonaws.com")
@@ -1107,6 +2362,16 @@ def main():
             carried = update_carried_profile(tokens, carried)
             if closes_loop and loop_depth > 0:
                 loop_depth -= 1
+
+    if CODEX_READ_ONLY and inspected_invocations == 0:
+        if codex_dynamic or codex_indirect_aws_wrapper(cmd):
+            decision(
+                "deny",
+                "Blocked fail-closed: an indirect or shell-generated AWS CLI "
+                "invocation is not allowed. Use the trusted path directly.",
+            )
+        ledger_flush()
+        sys.exit(0)
 
     if worst == "destroy":
         reasons_ask.insert(

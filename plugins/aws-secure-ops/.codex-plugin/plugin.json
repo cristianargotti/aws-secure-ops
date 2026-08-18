@@ -1,0 +1,38 @@
+{
+  "name": "aws-secure-ops",
+  "version": "2.2.0",
+  "description": "Dual-runtime AWS CLI guardrails: full Claude protocol and fail-closed read-only Codex enforcement.",
+  "author": {
+    "name": "Cristian Reyes",
+    "url": "https://github.com/cristianargotti"
+  },
+  "homepage": "https://github.com/cristianargotti/aws-secure-ops",
+  "repository": "https://github.com/cristianargotti/aws-secure-ops",
+  "license": "MIT",
+  "keywords": [
+    "aws",
+    "security",
+    "cli",
+    "guardrails",
+    "cloudtrail",
+    "least-privilege"
+  ],
+  "skills": "./skills/",
+  "interface": {
+    "displayName": "AWS Secure Ops",
+    "shortDescription": "Operate AWS CLI with fail-closed read-only guardrails.",
+    "longDescription": "Adds a secure AWS operating skill, a fail-closed pre-execution gate, and a session watchdog. In Codex it permits only explicit, bounded, non-sensitive reads through a policy-classified read-only profile; all mutations are blocked.",
+    "developerName": "Cristian Reyes",
+    "category": "Security",
+    "capabilities": [
+      "Interactive",
+      "Read"
+    ],
+    "websiteURL": "https://github.com/cristianargotti/aws-secure-ops",
+    "defaultPrompt": [
+      "Preflight a safe read-only AWS CLI command.",
+      "Plan a bounded read-only AWS investigation.",
+      "Review an AWS change without executing it."
+    ]
+  }
+}

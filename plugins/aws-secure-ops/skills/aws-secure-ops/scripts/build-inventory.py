@@ -504,7 +504,9 @@ CUSTOM_ROWS = [
     ("cloudfront", "sign", "read", 1, 0, 0),
     ("configure", "export-credentials", "read", 1, 0, 0),
     ("sso", "login", "read", 1, 0, 0),  # mints cached SSO credentials: sensitive
-    ("sso", "logout", "read", 0, 0, 0),
+    # Clears all cached SSO sessions on the workstation: a disruptive local
+    # state change, not a read.
+    ("sso", "logout", "destroy", 1, 0, 0),
     ("logs", "tail", "read", 0, 0, 0),  # v2 CLI live log tail: a pure read
 ]
 

@@ -2,6 +2,22 @@
 
 All notable changes to the aws-secure-ops package are documented here.
 
+## [2.2.0]
+
+Added dual Claude Code/Codex packaging. Claude retains the existing lanes;
+Codex gets a fail-closed read-only gate, supervised hook launcher, exact
+profile/region/path/pagination contract, Codex-aware doctor, and a dedicated
+offline regression suite. Policy and ledger file handling are hardened against
+wrong types, permissions, ownership, symlinks, and hard links. Runtime-specific
+limits and hook-trust requirements are documented in the skill and threat
+model. The Codex launcher ignores inherited shell functions, opens policy,
+inventory, alias, and ledger state without blocking on special files, and
+rejects active AWS CLI aliases. Reviewed inventory corrections now treat
+generated secrets, decrypted keys, Lambda download/configuration data,
+presigned upload/download/SSO URLs, IPAM verification tokens, and WAF change
+tokens as sensitive; SSO logout is destructive. Unbounded `s3 ls` and
+`logs tail` are denied in favor of bounded service API reads.
+
 ## [2.1.0]
 
 Security-hardening pass driven by a deep audit (see the repo-root CHANGELOG for

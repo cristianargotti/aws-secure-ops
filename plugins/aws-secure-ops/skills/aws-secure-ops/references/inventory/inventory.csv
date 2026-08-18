@@ -158,7 +158,7 @@ amplify,delete-job,destroy,1,0,0,model,prefix
 amplify,delete-webhook,destroy,1,0,0,model,prefix
 amplify,generate-access-logs,execute,0,0,0,model,prefix
 amplify,get-app,read,0,0,0,model,prefix
-amplify,get-artifact-url,read,0,0,0,model,prefix
+amplify,get-artifact-url,read,1,0,0,review,reviewed
 amplify,get-backend-environment,read,0,0,0,model,prefix
 amplify,get-branch,read,0,0,0,model,prefix
 amplify,get-domain-association,read,0,0,0,model,prefix
@@ -1037,13 +1037,13 @@ auditmanager,disassociate-assessment-report-evidence-folder,modify,0,0,0,model,p
 auditmanager,get-account-status,read,0,0,0,model,prefix
 auditmanager,get-assessment,read,0,0,0,model,prefix
 auditmanager,get-assessment-framework,read,0,0,0,model,prefix
-auditmanager,get-assessment-report-url,read,0,0,0,model,prefix
+auditmanager,get-assessment-report-url,read,1,0,0,review,reviewed
 auditmanager,get-change-logs,read,0,0,0,model,prefix
 auditmanager,get-control,read,0,0,0,model,prefix
 auditmanager,get-delegations,read,0,0,0,model,prefix
 auditmanager,get-evidence,read,0,0,0,model,prefix
 auditmanager,get-evidence-by-evidence-folder,read,0,0,0,model,prefix
-auditmanager,get-evidence-file-upload-url,read,0,0,0,model,prefix
+auditmanager,get-evidence-file-upload-url,read,1,0,0,review,reviewed
 auditmanager,get-evidence-folder,read,0,0,0,model,prefix
 auditmanager,get-evidence-folders-by-assessment,read,0,0,0,model,prefix
 auditmanager,get-evidence-folders-by-assessment-control,read,0,0,0,model,prefix
@@ -4295,7 +4295,7 @@ customer-profiles,get-segment-membership,read,0,0,0,model,prefix
 customer-profiles,get-segment-snapshot,read,0,0,0,model,prefix
 customer-profiles,get-similar-profiles,read,0,0,1,model,prefix
 customer-profiles,get-upload-job,read,0,0,0,model,prefix
-customer-profiles,get-upload-job-path,read,0,0,0,model,prefix
+customer-profiles,get-upload-job-path,read,1,0,0,review,reviewed
 customer-profiles,get-workflow,read,0,0,0,model,prefix
 customer-profiles,get-workflow-steps,read,0,0,0,model,prefix
 customer-profiles,list-account-integrations,read,0,0,0,model,prefix
@@ -4864,7 +4864,7 @@ devicefarm,get-suite,read,0,0,0,model,prefix
 devicefarm,get-test,read,0,0,0,model,prefix
 devicefarm,get-test-grid-project,read,0,0,0,model,prefix
 devicefarm,get-test-grid-session,read,0,0,0,model,prefix
-devicefarm,get-upload,read,0,0,0,model,prefix
+devicefarm,get-upload,read,1,0,0,review,reviewed
 devicefarm,get-vpce-configuration,read,0,0,0,model,prefix
 devicefarm,install-to-remote-access-session,execute,0,0,0,review,reviewed
 devicefarm,list-artifacts,read,0,0,1,model,prefix
@@ -4889,7 +4889,7 @@ devicefarm,list-test-grid-session-artifacts,read,0,0,0,model,prefix
 devicefarm,list-test-grid-sessions,read,0,0,0,model,prefix
 devicefarm,list-tests,read,0,0,1,model,prefix
 devicefarm,list-unique-problems,read,0,0,1,model,prefix
-devicefarm,list-uploads,read,0,0,1,model,prefix
+devicefarm,list-uploads,read,1,0,1,review,reviewed
 devicefarm,list-vpce-configurations,read,0,0,1,model,prefix
 devicefarm,purchase-offering,create,1,0,0,model,prefix
 devicefarm,renew-offering,create,0,0,0,model,prefix
@@ -5788,7 +5788,7 @@ ec2,describe-instance-types,read,0,1,1,model,prefix
 ec2,describe-instances,read,0,1,1,model,prefix
 ec2,describe-internet-gateways,read,0,1,1,model,prefix
 ec2,describe-ipam-byoasn,read,0,1,0,model,prefix
-ec2,describe-ipam-external-resource-verification-tokens,read,0,1,0,model,prefix
+ec2,describe-ipam-external-resource-verification-tokens,read,1,1,0,review,reviewed
 ec2,describe-ipam-policies,read,0,1,0,model,prefix
 ec2,describe-ipam-pools,read,0,1,1,model,prefix
 ec2,describe-ipam-prefix-list-resolver-targets,read,0,1,1,model,prefix
@@ -7389,7 +7389,7 @@ gamelift,describe-vpc-peering-authorizations,read,0,0,0,model,prefix
 gamelift,describe-vpc-peering-connections,read,0,0,0,model,prefix
 gamelift,get-compute-access,read,1,0,0,review,reviewed
 gamelift,get-compute-auth-token,read,1,0,0,review,reviewed
-gamelift,get-game-session-log-url,read,0,0,0,model,prefix
+gamelift,get-game-session-log-url,read,1,0,0,review,reviewed
 gamelift,get-instance-access,read,1,0,0,review,reviewed
 gamelift,list-aliases,read,0,0,1,model,prefix
 gamelift,list-builds,read,0,0,1,model,prefix
@@ -7985,7 +7985,7 @@ groundstation,delete-mission-profile,destroy,1,0,0,model,prefix
 groundstation,describe-contact,read,0,0,0,model,prefix
 groundstation,describe-ephemeris,read,0,0,0,model,prefix
 groundstation,get-agent-configuration,read,0,0,0,model,prefix
-groundstation,get-agent-task-response-url,read,0,0,0,model,prefix
+groundstation,get-agent-task-response-url,read,1,0,0,review,reviewed
 groundstation,get-config,read,0,0,0,model,prefix
 groundstation,get-dataflow-endpoint-group,read,0,0,0,model,prefix
 groundstation,get-minute-usage,read,0,0,0,model,prefix
@@ -9894,16 +9894,16 @@ lambda,get-durable-execution,read,0,0,0,model,prefix
 lambda,get-durable-execution-history,read,0,0,1,model,prefix
 lambda,get-durable-execution-state,read,0,0,1,model,prefix
 lambda,get-event-source-mapping,read,0,0,0,model,prefix
-lambda,get-function,read,0,0,0,model,prefix
+lambda,get-function,read,1,0,0,review,reviewed
 lambda,get-function-code-signing-config,read,0,0,0,model,prefix
 lambda,get-function-concurrency,read,0,0,0,model,prefix
-lambda,get-function-configuration,read,0,0,0,model,prefix
+lambda,get-function-configuration,read,1,0,0,review,reviewed
 lambda,get-function-event-invoke-config,read,0,0,0,model,prefix
 lambda,get-function-recursion-config,read,0,0,0,model,prefix
 lambda,get-function-scaling-config,read,0,0,0,model,prefix
 lambda,get-function-url-config,read,0,0,0,model,prefix
-lambda,get-layer-version,read,0,0,0,model,prefix
-lambda,get-layer-version-by-arn,read,0,0,0,model,prefix
+lambda,get-layer-version,read,1,0,0,review,reviewed
+lambda,get-layer-version-by-arn,read,1,0,0,review,reviewed
 lambda,get-layer-version-policy,read,0,0,0,model,prefix
 lambda,get-policy,read,0,0,0,model,prefix
 lambda,get-provisioned-concurrency-config,read,0,0,0,model,prefix
@@ -10599,7 +10599,7 @@ m2,get-data-set-export-task,read,0,0,0,model,prefix
 m2,get-data-set-import-task,read,0,0,0,model,prefix
 m2,get-deployment,read,0,0,0,model,prefix
 m2,get-environment,read,0,0,0,model,prefix
-m2,get-signed-bluinsights-url,read,0,0,0,model,prefix
+m2,get-signed-bluinsights-url,read,1,0,0,review,reviewed
 m2,list-application-versions,read,0,0,1,model,prefix
 m2,list-applications,read,0,0,1,model,prefix
 m2,list-batch-job-definitions,read,0,0,1,model,prefix
@@ -11522,7 +11522,7 @@ mturk,delete-worker-block,destroy,1,0,0,model,prefix
 mturk,disassociate-qualification-from-worker,modify,0,0,0,model,prefix
 mturk,get-account-balance,read,0,0,0,model,prefix
 mturk,get-assignment,read,0,0,0,model,prefix
-mturk,get-file-upload-url,read,0,0,0,model,prefix
+mturk,get-file-upload-url,read,1,0,0,review,reviewed
 mturk,get-hit,read,0,0,0,model,prefix
 mturk,get-qualification-score,read,0,0,0,model,prefix
 mturk,get-qualification-type,read,0,0,0,model,prefix
@@ -15364,7 +15364,7 @@ secretsmanager,create-secret,create,0,0,0,model,prefix
 secretsmanager,delete-resource-policy,destroy,1,0,0,model,exact
 secretsmanager,delete-secret,destroy,1,0,0,model,prefix
 secretsmanager,describe-secret,read,0,0,0,model,prefix
-secretsmanager,get-random-password,read,0,0,0,model,prefix
+secretsmanager,get-random-password,read,1,0,0,review,reviewed
 secretsmanager,get-resource-policy,read,0,0,0,model,prefix
 secretsmanager,get-secret-value,read,1,0,0,model,secret
 secretsmanager,list-secret-version-ids,read,0,0,0,model,prefix
@@ -15388,8 +15388,8 @@ security-ir,create-case,create,0,0,0,model,prefix
 security-ir,create-case-comment,create,0,0,0,model,prefix
 security-ir,create-membership,create,1,0,0,review,reviewed
 security-ir,get-case,read,0,0,0,model,prefix
-security-ir,get-case-attachment-download-url,read,0,0,0,model,prefix
-security-ir,get-case-attachment-upload-url,read,0,0,0,model,prefix
+security-ir,get-case-attachment-download-url,read,1,0,0,review,reviewed
+security-ir,get-case-attachment-upload-url,read,1,0,0,review,reviewed
 security-ir,get-membership,read,0,0,0,model,prefix
 security-ir,list-case-edits,read,0,0,1,model,prefix
 security-ir,list-cases,read,0,0,1,model,prefix
@@ -16367,7 +16367,7 @@ sso,get-role-credentials,read,1,0,0,model,secret
 sso,list-account-roles,read,0,0,1,model,prefix
 sso,list-accounts,read,0,0,1,model,prefix
 sso,login,read,1,0,0,custom,curated
-sso,logout,read,0,0,0,custom,curated
+sso,logout,destroy,1,0,0,custom,curated
 sso-admin,attach-customer-managed-policy-reference-to-permission-set,modify,1,0,0,review,reviewed
 sso-admin,attach-managed-policy-to-permission-set,modify,1,0,0,review,reviewed
 sso-admin,create-account-assignment,create,1,0,0,review,reviewed
@@ -17137,7 +17137,7 @@ waf,delete-sql-injection-match-set,destroy,1,0,0,model,prefix
 waf,delete-web-acl,destroy,1,0,0,model,prefix
 waf,delete-xss-match-set,destroy,1,0,0,model,prefix
 waf,get-byte-match-set,read,0,0,0,model,prefix
-waf,get-change-token,read,0,0,0,model,prefix
+waf,get-change-token,read,1,0,0,review,reviewed
 waf,get-change-token-status,read,0,0,0,model,prefix
 waf,get-geo-match-set,read,0,0,0,model,prefix
 waf,get-ip-set,read,0,0,0,model,prefix
@@ -17216,7 +17216,7 @@ waf-regional,delete-web-acl,destroy,1,0,0,model,prefix
 waf-regional,delete-xss-match-set,destroy,1,0,0,model,prefix
 waf-regional,disassociate-web-acl,modify,1,0,0,review,reviewed
 waf-regional,get-byte-match-set,read,0,0,0,model,prefix
-waf-regional,get-change-token,read,0,0,0,model,prefix
+waf-regional,get-change-token,read,1,0,0,review,reviewed
 waf-regional,get-change-token-status,read,0,0,0,model,prefix
 waf-regional,get-geo-match-set,read,0,0,0,model,prefix
 waf-regional,get-ip-set,read,0,0,0,model,prefix
@@ -17287,7 +17287,7 @@ wafv2,describe-managed-products-by-vendor,read,0,0,0,model,prefix
 wafv2,describe-managed-rule-group,read,0,0,0,model,prefix
 wafv2,disassociate-web-acl,modify,1,0,0,review,reviewed
 wafv2,generate-mobile-sdk-release-url,execute,0,0,0,model,prefix
-wafv2,get-decrypted-api-key,read,0,0,0,model,prefix
+wafv2,get-decrypted-api-key,read,1,0,0,review,reviewed
 wafv2,get-ip-set,read,0,0,0,model,prefix
 wafv2,get-logging-configuration,read,0,0,0,model,prefix
 wafv2,get-managed-rule-set,read,0,0,0,model,prefix

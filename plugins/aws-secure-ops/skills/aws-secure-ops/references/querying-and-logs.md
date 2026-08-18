@@ -57,7 +57,7 @@ aws logs start-query --log-group-name <g> \
   --query-string 'fields @timestamp, @message | filter @message like /ERROR/ | sort @timestamp desc | limit 100'
 aws logs get-query-results --query-id <id>   # poll per waiters-and-timing.md
 
-# Live tail is for active incidents only; give it --since and a filter
+# Claude-only live tail: Codex denies logs tail because it has no total bound
 aws logs tail <group> --since 15m --filter-pattern '"ERROR"'
 ```
 

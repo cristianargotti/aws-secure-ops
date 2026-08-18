@@ -5,10 +5,10 @@
   "waiters": 316,
   "class_totals": {
     "create": 2250,
-    "destroy": 2487,
+    "destroy": 2488,
     "execute": 1028,
     "modify": 4374,
-    "read": 7667
+    "read": 7666
   },
   "unknown_verb_operations": 21,
   "domain_sizes": {
@@ -24,6 +24,6 @@
     "data-analytics-ai": 65,
     "platform-misc": 115
   },
-  "sensitive_operations": 3134,
-  "reviewed_rows": 773
+  "sensitive_operations": 3156,
+  "reviewed_rows": 794
 }
