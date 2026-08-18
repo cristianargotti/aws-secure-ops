@@ -35,6 +35,9 @@ Modes:
 Environment overrides (all optional; conservative real defaults):
     AWS_OPS_GATE_FILE     path to the classification gate to probe
     AWS_OPS_LEDGER_FILE   path to the decision ledger (for rotation)
+    AWS_OPS_POLICY_FILE   private policy path (Codex local install reuses the
+                          existing ~/.claude/aws-ops.policy.json)
+    PLUGIN_ROOT           Codex-provided root used to verify hook packaging
     HOME                  resolves settings.json / policy / plugin state
 """
 
@@ -42,6 +45,7 @@ import csv
 import json
 import os
 import re
+import stat
 import subprocess
 import sys
 import tempfile
@@ -49,6 +53,53 @@ from pathlib import Path
 
 SKILL_ROOT = Path(__file__).resolve().parent.parent
 SCRIPTS = SKILL_ROOT / "scripts"
+MAX_POLICY_BYTES = 1_048_576
+MAX_AWS_ALIAS_BYTES = 262_144
+CODEX_POLICY_ALLOWLIST_ENV = frozenset(
+    {
+        "SSL_CERT_FILE",
+        "SSL_CERT_DIR",
+        "REQUESTS_CA_BUNDLE",
+        "CURL_CA_BUNDLE",
+        "HTTPS_PROXY",
+        "HTTP_PROXY",
+        "ALL_PROXY",
+        "NO_PROXY",
+        "https_proxy",
+        "http_proxy",
+        "all_proxy",
+        "no_proxy",
+    }
+)
+CODEX_INTERNAL_AWS_ENV = frozenset(
+    {
+        "AWS_OPS_HOOK_RUNTIME",
+        "AWS_OPS_MODE",
+        "AWS_OPS_POLICY_FILE",
+        "AWS_OPS_LEDGER_FILE",
+        "AWS_OPS_UNSAFE_LAUNCH_ENV",
+        "AWS_OPS_TRUSTED_AWS_CLI",
+    }
+)
+CODEX_FORBIDDEN_RUNTIME_ENV = frozenset(
+    {
+        "BASH_ENV",
+        "ENV",
+        "ZDOTDIR",
+        "PYTHONHOME",
+        "PYTHONPATH",
+        "PYTHONINSPECT",
+        "PYTHONSTARTUP",
+        "PYTHONWARNINGS",
+        "PYTHONBREAKPOINT",
+        "PYTHONUSERBASE",
+        "LD_PRELOAD",
+        "LD_LIBRARY_PATH",
+        "BOTO_CONFIG",
+        "AWS_DATA_PATH",
+        "SSLKEYLOGFILE",
+    }
+)
 
 
 def _gate_path():
@@ -67,12 +118,34 @@ GATE = _gate_path()
 INVENTORY_CSV = SKILL_ROOT / "references" / "inventory" / "inventory.csv"
 SUMMARY_JSON = SKILL_ROOT / "references" / "inventory" / "summary.json"
 SETTINGS_JSON = Path.home() / ".claude" / "settings.json"
-POLICY_JSON = Path.home() / ".claude" / "aws-ops.policy.json"
+POLICY_JSON = Path(
+    os.environ.get(
+        "AWS_OPS_POLICY_FILE", str(Path.home() / ".claude" / "aws-ops.policy.json")
+    )
+).expanduser()
 PLUGINS_INSTALLED = Path.home() / ".claude" / "plugins" / "installed_plugins.json"
+AWS_ALIAS_FILE = Path.home() / ".aws" / "cli" / "alias"
 # The plugin id the gate ships under, matched by prefix so any marketplace
 # suffix ("aws-secure-ops@<marketplace>") counts.
 PLUGIN_ID_PREFIX = "aws-secure-ops@"
 LEDGER_ROTATE_THRESHOLD = 5 * 1024 * 1024  # ~5 MB
+CODEX_RUNTIME = os.environ.get("AWS_OPS_HOOK_RUNTIME") == "codex"
+POLICY_STAMP = re.compile(r"[a-z0-9]+(?:-[a-z0-9]+)*\Z")
+
+
+def _trusted_aws_cli():
+    configured = os.environ.get("AWS_OPS_TRUSTED_AWS_CLI")
+    if configured:
+        return configured
+    candidates = (
+        "/opt/homebrew/bin/aws",
+        "/usr/local/bin/aws",
+        "/usr/bin/aws",
+    )
+    for candidate in candidates:
+        if os.path.isfile(candidate) and os.access(candidate, os.X_OK):
+            return candidate
+    return candidates[0]
 
 
 def _ledger_path():
@@ -156,6 +229,64 @@ def check_gate_compiles():
     # (and therefore without touching AWS or the live hook path).
     compile(source, str(GATE), "exec")
     return PASS, f"{GATE.name} is valid Python ({len(source.splitlines())} lines)"
+
+
+@check("trusted AWS CLI path")
+def check_trusted_aws_cli():
+    if not CODEX_RUNTIME:
+        return PASS, "exact-path enforcement is enabled only in the Codex lane"
+    trusted = _trusted_aws_cli()
+    if not os.path.isabs(trusted):
+        return FAIL, f"trusted CLI path is not absolute: {trusted}"
+    if not os.path.isfile(trusted) or not os.access(trusted, os.X_OK):
+        return FAIL, f"trusted AWS CLI is missing or not executable: {trusted}"
+    return PASS, f"trusted executable is {trusted}"
+
+
+@check("AWS CLI aliases")
+def check_aws_cli_aliases():
+    if not CODEX_RUNTIME:
+        return PASS, "Claude lane preserves its legacy AWS CLI alias behavior"
+    fd = None
+    try:
+        flags = os.O_RDONLY
+        if hasattr(os, "O_CLOEXEC"):
+            flags |= os.O_CLOEXEC
+        if hasattr(os, "O_NOFOLLOW"):
+            flags |= os.O_NOFOLLOW
+        elif AWS_ALIAS_FILE.is_symlink():
+            return FAIL, "AWS CLI alias file must not be a symbolic link"
+        if hasattr(os, "O_NONBLOCK"):
+            flags |= os.O_NONBLOCK
+        fd = os.open(AWS_ALIAS_FILE, flags)
+        st = os.fstat(fd)
+        if not stat.S_ISREG(st.st_mode):
+            return FAIL, "AWS CLI alias file must be a regular file"
+        if st.st_uid != os.getuid():
+            return FAIL, "AWS CLI alias file must be owned by the current user"
+        if st.st_size > MAX_AWS_ALIAS_BYTES:
+            return FAIL, f"AWS CLI alias file exceeds {MAX_AWS_ALIAS_BYTES} bytes"
+        with os.fdopen(fd, encoding="utf-8") as stream:
+            fd = None
+            text = stream.read(MAX_AWS_ALIAS_BYTES + 1)
+    except FileNotFoundError:
+        return PASS, "no AWS CLI alias file is configured"
+    except (OSError, UnicodeError) as exc:
+        return (
+            FAIL,
+            f"AWS CLI alias file is unsafe or unreadable ({type(exc).__name__})",
+        )
+    finally:
+        if fd is not None:
+            os.close(fd)
+    active = [
+        line
+        for line in text.splitlines()
+        if line.strip() and not line.lstrip().startswith(("#", ";"))
+    ]
+    if active:
+        return FAIL, "AWS CLI aliases can replace otherwise approved commands"
+    return PASS, "AWS CLI alias file contains no active aliases"
 
 
 @check("inventory csv")
@@ -285,8 +416,92 @@ def _plugin_gate_enabled(settings):
     return installed and enabled
 
 
-@check("gate registered as PreToolUse hook")
+@check("packaged hook contract")
 def check_hook_registration():
+    if CODEX_RUNTIME:
+        root_value = os.environ.get("PLUGIN_ROOT")
+        if not root_value:
+            return FAIL, "Codex did not provide PLUGIN_ROOT to the plugin hook"
+        root = Path(root_value).expanduser().resolve()
+        manifest = root / ".codex-plugin" / "plugin.json"
+        hooks_file = root / "hooks" / "hooks.json"
+        if not manifest.is_file() or not hooks_file.is_file():
+            return FAIL, "Codex plugin manifest or hooks/hooks.json is missing"
+        try:
+            hooks = json.loads(hooks_file.read_text(encoding="utf-8"))
+        except (OSError, json.JSONDecodeError) as exc:
+            return FAIL, f"Codex hooks file is unreadable: {exc}"
+        groups = hooks.get("hooks", {}) if isinstance(hooks, dict) else {}
+        pretool = groups.get("PreToolUse", []) if isinstance(groups, dict) else []
+        session = groups.get("SessionStart", []) if isinstance(groups, dict) else []
+
+        pretool_commands = []
+        if isinstance(pretool, list):
+            for entry in pretool:
+                if not isinstance(entry, dict):
+                    continue
+                matcher = entry.get("matcher", "")
+                try:
+                    matches_bash = isinstance(matcher, str) and bool(
+                        re.fullmatch(matcher, "Bash")
+                    )
+                except re.error:
+                    matches_bash = False
+                if not matches_bash:
+                    continue
+                for hook in entry.get("hooks", []):
+                    if isinstance(hook, dict) and hook.get("type") == "command":
+                        pretool_commands.append(str(hook.get("command", "")))
+        if not any(
+            all(
+                marker in command
+                for marker in (
+                    "run-gate.sh",
+                    "--codex-pretool",
+                    "classify-aws-command.py",
+                    "AWS_OPS_HOOK_RUNTIME=codex",
+                    "AWS_OPS_MODE=readonly",
+                    "permissionDecision",
+                    'permissionDecision":"deny',
+                    "${PLUGIN_ROOT}",
+                )
+            )
+            for command in pretool_commands
+        ):
+            return FAIL, (
+                "Codex PreToolUse must match Bash, use the supervised read-only "
+                "gate, and include a fail-closed fallback"
+            )
+
+        session_commands = []
+        if isinstance(session, list):
+            for entry in session:
+                if not isinstance(entry, dict):
+                    continue
+                for hook in entry.get("hooks", []):
+                    if isinstance(hook, dict) and hook.get("type") == "command":
+                        session_commands.append(str(hook.get("command", "")))
+        if not any(
+            all(
+                marker in command
+                for marker in (
+                    "run-gate.sh",
+                    "--codex-session",
+                    "aws-ops-doctor.py",
+                    "--quick --session",
+                    "systemMessage",
+                    "${PLUGIN_ROOT}",
+                )
+            )
+            for command in session_commands
+        ):
+            return FAIL, "Codex SessionStart watchdog contract is incomplete"
+        return PASS, (
+            "static package wires Bash PreToolUse through the supervisor and "
+            "SessionStart through the watchdog; verify runtime trust with /hooks "
+            "and the no-AWS canary"
+        )
+
     settings, err = _read_settings()
 
     if _manual_hook_present(settings):
@@ -308,37 +523,171 @@ def check_hook_registration():
     return FAIL, f"the gate is not wired into the agent's Bash tool: {detail}"
 
 
+def _read_codex_policy_text():
+    """Read the private policy without following links or blocking on devices."""
+    if POLICY_JSON.is_symlink():
+        return None, "policy file must not be a symbolic link"
+    flags = os.O_RDONLY
+    if hasattr(os, "O_CLOEXEC"):
+        flags |= os.O_CLOEXEC
+    if hasattr(os, "O_NOFOLLOW"):
+        flags |= os.O_NOFOLLOW
+    if hasattr(os, "O_NONBLOCK"):
+        flags |= os.O_NONBLOCK
+    fd = None
+    try:
+        fd = os.open(POLICY_JSON, flags)
+        file_stat = os.fstat(fd)
+        if not stat.S_ISREG(file_stat.st_mode):
+            return None, "policy file must be a regular file"
+        if file_stat.st_uid != os.getuid():
+            return None, "policy file must be owned by the current user"
+        if file_stat.st_size > MAX_POLICY_BYTES:
+            return None, f"policy file exceeds {MAX_POLICY_BYTES} bytes"
+        mode = stat.S_IMODE(file_stat.st_mode)
+        if mode != 0o600:
+            return None, f"policy permissions must be 600 (found {mode:03o})"
+        stream = os.fdopen(fd, encoding="utf-8")
+        fd = None
+        with stream:
+            text = stream.read(MAX_POLICY_BYTES + 1)
+        if len(text.encode("utf-8")) > MAX_POLICY_BYTES:
+            return None, f"policy file exceeds {MAX_POLICY_BYTES} bytes"
+        return text, None
+    except (OSError, UnicodeError) as exc:
+        return None, f"policy file is unavailable or invalid ({type(exc).__name__})"
+    finally:
+        if fd is not None:
+            os.close(fd)
+
+
 @check("policy file")
 def check_policy():
-    if not POLICY_JSON.is_file():
+    if not os.path.lexists(POLICY_JSON):
+        if CODEX_RUNTIME:
+            return FAIL, f"{POLICY_JSON} is required by the Codex fail-closed lane"
         return WARN, (
             f"{POLICY_JSON} absent — the gate runs on conservative "
             "defaults; a policy file tightens it to your accounts"
         )
-    try:
-        policy = json.loads(POLICY_JSON.read_text(encoding="utf-8"))
-    except json.JSONDecodeError as exc:
-        return FAIL, f"policy file is not valid JSON: {exc}"
+
+    if CODEX_RUNTIME:
+        text, error = _read_codex_policy_text()
+        if error:
+            return FAIL, error
+        try:
+            policy = json.loads(text)
+        except json.JSONDecodeError as exc:
+            return FAIL, f"policy file is not valid JSON: {exc}"
+    else:
+        # Preserve the original Claude contract: the policy is optional and
+        # schema-checked, but owner/mode/symlink constraints are Codex-only.
+        try:
+            policy = json.loads(POLICY_JSON.read_text(encoding="utf-8"))
+        except json.JSONDecodeError as exc:
+            return FAIL, f"policy file is not valid JSON: {exc}"
+        except (OSError, UnicodeError) as exc:
+            return FAIL, f"cannot read policy file: {exc}"
+
     if not isinstance(policy, dict):
         return FAIL, "policy file top level must be a JSON object"
 
     problems = []
     operator = policy.get("operator")
-    if not (isinstance(operator, dict) and operator.get("stamp_prefix")):
+    if CODEX_RUNTIME:
+        if not isinstance(operator, dict):
+            problems.append("operator must be an object")
+        else:
+            prefix = operator.get("stamp_prefix")
+            if not isinstance(prefix, str) or not prefix.strip():
+                problems.append("operator.stamp_prefix missing")
+            elif not POLICY_STAMP.fullmatch(prefix.strip()):
+                problems.append("operator.stamp_prefix must be lowercase kebab-case")
+    elif not (isinstance(operator, dict) and operator.get("stamp_prefix")):
         problems.append("operator.stamp_prefix missing")
-    profiles = policy.get("profiles", {})
+
+    profiles = policy.get("profiles") if CODEX_RUNTIME else policy.get("profiles", {})
+    profile_count = 0
     if not isinstance(profiles, dict):
         problems.append("profiles must be an object")
     else:
+        profile_count = len(profiles)
+        if CODEX_RUNTIME and not profiles:
+            problems.append("profiles must classify at least one profile")
         allowed = {"readonly", "admin", "frozen", "personal"}
-        bad = sorted(k for k, v in profiles.items() if v not in allowed)
+        bad = sorted(
+            key
+            for key, value in profiles.items()
+            if not isinstance(value, str) or value not in allowed
+        )
         if bad:
             problems.append(f"profiles with invalid class: {', '.join(bad)}")
+        if CODEX_RUNTIME and not any(
+            value == "readonly" for value in profiles.values()
+        ):
+            problems.append("profiles must include at least one readonly profile")
     if "required_tags" in policy and not isinstance(policy["required_tags"], dict):
         problems.append("required_tags must be an object")
+    if CODEX_RUNTIME:
+        allowed_environment = policy.get("allowed_environment", {})
+        if not isinstance(allowed_environment, dict):
+            problems.append("allowed_environment must be an object")
+        else:
+            unsupported = sorted(set(allowed_environment) - CODEX_POLICY_ALLOWLIST_ENV)
+            if unsupported:
+                problems.append(
+                    "allowed_environment has unsupported keys: "
+                    + ", ".join(unsupported)
+                )
+            bad_values = sorted(
+                name
+                for name, value in allowed_environment.items()
+                if not isinstance(value, str) or not value
+            )
+            if bad_values:
+                problems.append(
+                    "allowed_environment has invalid values: " + ", ".join(bad_values)
+                )
     if problems:
         return FAIL, "; ".join(problems)
-    return PASS, f"valid JSON, stamp prefix set, {len(profiles)} profile(s) classified"
+    return PASS, f"valid JSON, stamp prefix set, {profile_count} profile(s) classified"
+
+
+@check("Codex inherited environment")
+def check_codex_environment():
+    if not CODEX_RUNTIME:
+        return PASS, "Claude lane preserves its legacy environment contract"
+    text, error = _read_codex_policy_text()
+    if error:
+        return FAIL, f"cannot validate environment against policy ({error})"
+    try:
+        policy = json.loads(text)
+    except (ValueError, UnicodeError) as exc:
+        return (
+            FAIL,
+            f"cannot validate environment against policy ({type(exc).__name__})",
+        )
+    allowed = policy.get("allowed_environment", {})
+    if not isinstance(allowed, dict):
+        return FAIL, "allowed_environment is not a JSON object"
+
+    unsafe = {
+        name
+        for name, value in os.environ.items()
+        if value
+        and (
+            (name.startswith("AWS_") and name not in CODEX_INTERNAL_AWS_ENV)
+            or name in CODEX_FORBIDDEN_RUNTIME_ENV
+            or name.startswith("DYLD_")
+            or name.startswith("BASH_FUNC_")
+            or (name in CODEX_POLICY_ALLOWLIST_ENV and allowed.get(name) != value)
+        )
+    }
+    launch_context = os.environ.get("AWS_OPS_UNSAFE_LAUNCH_ENV", "")
+    unsafe.update(name for name in launch_context.split(",") if name)
+    if unsafe:
+        return FAIL, "unsafe inherited context: " + ", ".join(sorted(unsafe))
+    return PASS, "AWS, runtime, CA, and proxy environment matches the private policy"
 
 
 # Token families for the misleading-name lint. "ro" is only ever matched as
@@ -381,10 +730,15 @@ def _load_policy_with_dupes():
             dupes.append((frozenset(k for k, _ in pairs), local_dupes))
         return dict(pairs)
 
-    try:
-        text = POLICY_JSON.read_text(encoding="utf-8")
-    except OSError as exc:
-        return None, [], f"cannot read policy file: {exc}"
+    if CODEX_RUNTIME:
+        text, error = _read_codex_policy_text()
+        if error:
+            return None, [], error
+    else:
+        try:
+            text = POLICY_JSON.read_text(encoding="utf-8")
+        except OSError as exc:
+            return None, [], f"cannot read policy file: {exc}"
     try:
         policy = json.loads(text, object_pairs_hook=hook)
     except json.JSONDecodeError as exc:
@@ -480,12 +834,23 @@ def run_suite(script: Path):
     """Run one offline unit suite; returns (status, reason)."""
     if not os.access(script, os.R_OK):
         return FAIL, f"{script.name} exists but is not readable"
+    env = dict(os.environ)
+    # The original suites assert upstream Claude decisions (including ask).
+    # Validate those semantics in their native mode; the dedicated Codex suite
+    # below validates ask->deny and the stricter read-only lane.
+    for name in (
+        "AWS_OPS_HOOK_RUNTIME",
+        "AWS_OPS_MODE",
+        "AWS_OPS_TRUSTED_AWS_CLI",
+    ):
+        env.pop(name, None)
     proc = subprocess.run(
         ["bash", str(script)],
         capture_output=True,
         text=True,
         timeout=SUBPROCESS_TIMEOUT,
         cwd=str(SCRIPTS),
+        env=env,
     )
     out = (proc.stdout + proc.stderr).strip().splitlines()
     last = out[-1] if out else "(no output)"
@@ -515,6 +880,44 @@ def check_unit_suite_hardening():
     return run_suite(script)
 
 
+@check("unit suite: Codex read-only gate")
+def check_unit_suite_codex():
+    script = SCRIPTS / "test-codex-readonly.py"
+    if not script.is_file():
+        return FAIL, "test-codex-readonly.py is missing"
+    proc = subprocess.run(
+        [sys.executable, str(script)],
+        capture_output=True,
+        text=True,
+        timeout=SUBPROCESS_TIMEOUT,
+        cwd=str(SCRIPTS),
+    )
+    out = (proc.stdout + proc.stderr).strip().splitlines()
+    last = out[-1] if out else "(no output)"
+    if proc.returncode != 0:
+        return FAIL, f"exited {proc.returncode}: {last}"
+    return PASS, last
+
+
+@check("unit suite: doctor policy contract")
+def check_unit_suite_doctor_policy():
+    script = SCRIPTS / "test-doctor-policy.py"
+    if not script.is_file():
+        return FAIL, "test-doctor-policy.py is missing"
+    proc = subprocess.run(
+        [sys.executable, str(script)],
+        capture_output=True,
+        text=True,
+        timeout=SUBPROCESS_TIMEOUT,
+        cwd=str(SCRIPTS),
+    )
+    out = (proc.stdout + proc.stderr).strip().splitlines()
+    last = out[-1] if out else "(no output)"
+    if proc.returncode != 0:
+        return FAIL, f"exited {proc.returncode}: {last}"
+    return PASS, last
+
+
 def probe_gate(command: str, policy_file: str):
     """Feed one command through the gate exactly as the hook harness would.
 
@@ -524,6 +927,17 @@ def probe_gate(command: str, policy_file: str):
     """
     event = json.dumps({"tool_name": "Bash", "tool_input": {"command": command}})
     env = dict(os.environ)
+    if CODEX_RUNTIME:
+        for name in tuple(env):
+            if (
+                (name.startswith("AWS_") and name not in CODEX_INTERNAL_AWS_ENV)
+                or name in CODEX_FORBIDDEN_RUNTIME_ENV
+                or name in CODEX_POLICY_ALLOWLIST_ENV
+                or name.startswith("DYLD_")
+                or name.startswith("BASH_FUNC_")
+            ):
+                env.pop(name, None)
+        env["AWS_OPS_UNSAFE_LAUNCH_ENV"] = ""
     env["AWS_OPS_POLICY_FILE"] = policy_file  # isolate from any private policy
     # Never let a probe decision reach the operator's real reconciliation
     # ledger: the SessionStart watchdog runs this on every session start.
@@ -560,21 +974,40 @@ def check_stamp_mechanism():
         json.dump(probe_policy, fh)
         policy_path = fh.name
     try:
-        decision, _ = probe_gate(
-            "aws ec2 create-tags --resources vol-0doctor "
-            "--tags Key=environment,Value=example --profile probe-admin",
-            policy_path,
-        )
+        if CODEX_RUNTIME:
+            trusted = _trusted_aws_cli()
+            prefix = (
+                "AWS_SDK_UA_APP_ID=xx-doctor AWS_IGNORE_CONFIGURED_ENDPOINT_URLS=true "
+            )
+            decision, _ = probe_gate(
+                prefix + trusted + " ec2 create-tags --resources vol-0doctor "
+                "--tags Key=environment,Value=example --profile probe-read "
+                "--region us-east-1 --no-cli-pager --no-cli-auto-prompt",
+                policy_path,
+            )
+        else:
+            decision, _ = probe_gate(
+                "aws ec2 create-tags --resources vol-0doctor "
+                "--tags Key=environment,Value=example --profile probe-admin",
+                policy_path,
+            )
         if decision != "deny":
             return (
                 FAIL,
                 f"unstamped mutation was '{decision}', expected deny — the seatbelt is loose",
             )
-        decision, reason = probe_gate(
-            "AWS_SDK_UA_APP_ID=xx-doctor aws ec2 describe-volumes "
-            "--volume-ids vol-0doctor --profile probe-read",
-            policy_path,
-        )
+        if CODEX_RUNTIME:
+            decision, reason = probe_gate(
+                prefix + trusted + " sts get-caller-identity --profile probe-read "
+                "--region us-east-1 --no-cli-pager --no-cli-auto-prompt",
+                policy_path,
+            )
+        else:
+            decision, reason = probe_gate(
+                "AWS_SDK_UA_APP_ID=xx-doctor aws ec2 describe-volumes "
+                "--volume-ids vol-0doctor --profile probe-read",
+                policy_path,
+            )
         if decision != "allow":
             return FAIL, f"pointed read was '{decision}' ({reason}), expected allow"
         return PASS, "unstamped mutation denied, pointed read allowed"
@@ -664,15 +1097,23 @@ def selected_checks(quick):
     checks = [
         check_python,
         check_gate_compiles,
+        check_trusted_aws_cli,
+        check_aws_cli_aliases,
         check_inventory,
         check_inventory_verifier,
         check_hook_registration,
         check_policy,
+        check_codex_environment,
         check_policy_lint,
     ]
     if not quick:
         # The *.sh suites are the slow part; --quick and --session skip them.
-        checks += [check_unit_suite_classify, check_unit_suite_hardening]
+        checks += [
+            check_unit_suite_classify,
+            check_unit_suite_hardening,
+            check_unit_suite_codex,
+            check_unit_suite_doctor_policy,
+        ]
     checks.append(check_stamp_mechanism)
     return checks
 
@@ -745,7 +1186,13 @@ def main():
     if counts[WARN]:
         print("Healthy with caveats — review the warnings above.")
     else:
-        print("All checks passed; the seatbelt is buckled.")
+        if CODEX_RUNTIME:
+            print(
+                "Static and offline checks passed. Confirm both hooks are trusted "
+                "with /hooks, then run the documented no-AWS canary."
+            )
+        else:
+            print("All checks passed; the seatbelt is buckled.")
     sys.exit(0)
 
 

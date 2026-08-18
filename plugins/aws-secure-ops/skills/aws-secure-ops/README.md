@@ -8,6 +8,11 @@ toggle as one unit. For installation, the marketplace flow, and the on/off
 switch, see the **repository README** one level up; this file describes what
 lives inside the skill and how the pieces relate.
 
+Runtime matters: Claude Code retains the full staged-mutation protocol. Codex
+is deliberately fail-closed and read-only because its current hook runtime
+does not safely pause an `ask` decision. In Codex, mutation guidance is for
+planning/review only and sensitive reads are blocked.
+
 ## What ships together
 
 1. **The skill** (`SKILL.md` + `references/`) -- the operating loop: identity
@@ -16,7 +21,9 @@ lives inside the skill and how the pieces relate.
    classified inventory of every operation in the installed CLI.
 2. **The gate** (`scripts/classify-aws-command.py`) -- a `PreToolUse` hook that
    classifies every `aws` invocation against that inventory before it runs, and
-   denies or pauses the risky ones. It is mechanical enforcement of the same
+   denies or pauses the risky ones. In Codex every pause is converted to deny
+   and additional exact-path/read-only checks apply. It is mechanical
+   enforcement of the same
    taxonomy the skill teaches, and records each decision to a local,
    metadata-only ledger you can reconcile against CloudTrail. It has known
    limits; read `references/threat-model.md` before trusting it with anything.
@@ -49,6 +56,13 @@ lowers the odds of a careless keystroke; it does not replace them.
 - Reconcile: every gate decision is recorded in a local ledger (metadata only)
   so you can check your session against CloudTrail via the purpose stamp.
 
+Codex additionally requires the selected absolute CLI path, a profile declared
+`readonly`, explicit `--region`, `--no-cli-pager`, `--no-cli-auto-prompt`, inline
+endpoint isolation, no active AWS CLI aliases, and equal 1..100 pagination
+bounds where applicable. It never executes the mutation bullets above. Codex
+uses bounded `s3api list-*` and `logs filter-log-events` calls instead of
+unbounded high-level `s3 ls` or `logs tail`.
+
 ## Installing outside the plugin
 
 The plugin wires the gate and watchdog automatically -- see the repository
@@ -59,6 +73,9 @@ gate as a `PreToolUse` hook on the Bash tool; it is idempotent, backs up
 coverage of `aws` typed into an ordinary terminal, `scripts/aws-shim.sh` routes
 those commands through the same classifier -- honestly best-effort, since a
 path-qualified binary walks past it.
+
+Those installer/shim paths are Claude and terminal compatibility tools, not a
+way around the Codex plugin gate.
 
 ## Optional local policy
 
@@ -84,8 +101,10 @@ environment. The contract (shape only -- fill in your own facts):
 }
 ```
 
-The policy is binding when present; without it, the skill's conservative
-defaults apply. Keep it out of any shared or version-controlled copy.
+The policy is binding when present; without it, Claude uses conservative
+defaults. Codex requires it as a user-owned regular file with mode 600 and at
+least one `readonly` profile. Keep it out of any shared or version-controlled
+copy.
 
 ## Health check
 

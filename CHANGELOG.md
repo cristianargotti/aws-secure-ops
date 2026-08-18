@@ -2,6 +2,57 @@
 
 All notable changes to the aws-secure-ops plugin are documented here.
 
+## [2.2.0]
+
+Dual-runtime release: the existing Claude Code plugin remains intact and the
+same package is now installable as a Codex plugin.
+
+### Codex
+
+- Added the Codex manifest and repository marketplace metadata.
+- Added a fail-closed read-only execution lane. Only known, non-sensitive,
+  bounded reads through a policy-classified readonly profile and selected
+  absolute AWS CLI path can run. Execute/create/modify/destroy, sensitive and
+  configuration reads, unknown operations, custom endpoints, admin/frozen/
+  personal profiles, and unbounded pagination are denied.
+- Converted every upstream ask result to deny, because current Codex hook
+  semantics do not safely pause an ask decision.
+- Added exact profile/region/stamp/endpoint-isolation/non-interactive command
+  requirements plus inherited and inline credential/context defenses.
+- Added command-position discovery so documentation/search text is ignored,
+  while wrappers, dynamic command names, loops, functions, control flow,
+  prefix redirections, and obvious copied/symlinked CLI paths fail closed.
+- Added a supervised hook launcher: classifier crashes, missing Python, or
+  malformed output become valid deny output; SessionStart failures become a
+  visible watchdog warning. The dispatcher ignores inherited shell functions,
+  and policy/inventory/ledger special files cannot stall past the hook timeout.
+- Added an offline Codex regression suite and Codex-aware doctor checks.
+
+### Shared hardening
+
+- Policy reads now use owner/mode/type checks and no-follow opens in the Codex
+  lane.
+- Ledger files are created mode 600 and reject symlinks, non-regular files,
+  wrong owners, and hard-linked targets before append/chmod.
+- Hooks dispatch by runtime from one hooks.json, preserving the Claude Code
+  behavior and enabling the stricter Codex branch through PLUGIN_ROOT.
+- Documentation now separates executable Claude mutations from Codex
+  planning-only mutation guidance, documents hook trust, and states IAM
+  read-only roles as the enforceable boundary.
+- Active AWS CLI aliases are rejected in Codex because they can replace a
+  command that otherwise passed classification.
+
+### Inventory and bounded reads
+
+- Marked plaintext or write-capable material sensitive, including generated
+  passwords, decrypted WAF keys, Lambda code/configuration download data,
+  presigned upload/download/SSO URLs, IPAM verification tokens, and WAF change
+  tokens. These reads are denied in the Codex lane.
+- Reclassified local SSO logout as destructive and sensitive.
+- Codex denies `logs tail` and high-level `s3 ls`, which cannot enforce a total
+  result bound, and directs callers to bounded `logs filter-log-events` and
+  `s3api list-*` operations.
+
 ## [2.1.0]
 
 Security-hardening pass on the gate, plus reproducible tooling. Driven by a deep

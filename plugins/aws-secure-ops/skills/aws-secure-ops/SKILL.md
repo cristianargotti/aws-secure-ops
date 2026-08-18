@@ -1,9 +1,37 @@
 ---
 name: aws-secure-ops
-description: ALWAYS invoke before running ANY aws CLI command or planning ANY AWS operation, in every account and every environment. This covers reads, log queries, deploys, creates, modifications, deletions, SSM sessions, and credential handling alike, even a single innocuous-looking describe. Enforces a universal secure-operations protocol, identity gate, least-privilege profile selection, purpose stamping, pointed bounded queries, staged mutations with dry-run and change sets, professional tagging, single-target deletes, waiter-based timing, secret hygiene, and audit-trail accountability. Consult it again before anything destructive.
+description: >-
+  ALWAYS invoke before running ANY aws CLI command or planning ANY AWS
+  operation, in every account and every environment. This covers reads, log
+  queries, deploys, creates, modifications, deletions, SSM sessions, and
+  credential handling alike, even a single innocuous-looking describe.
+  Enforces a universal secure-operations protocol, identity gate,
+  least-privilege profile selection, purpose stamping, pointed bounded
+  queries, staged mutations with dry-run and change sets, professional
+  tagging, single-target deletes, waiter-based timing, secret hygiene, and
+  audit-trail accountability. In Codex the enforced execution lane is
+  fail-closed and read-only: mutations and sensitive reads are planned or
+  reviewed, never executed.
 ---
 
 # AWS secure operations
+
+## Runtime contract
+
+This skill ships to both supported agent runtimes:
+
+| Runtime | Executable lane |
+| ------- | --------------- |
+| Claude Code | Existing protocol: reads plus staged, confirmed mutations under the upstream gate. |
+| Codex | **Fail-closed read-only:** explicit, bounded, non-sensitive reads only. Execute, create, modify, destroy, sensitive/configuration reads, unknown operations, wrappers, and custom endpoints are denied. |
+
+Codex currently parses a PreToolUse result of ask but does not pause the tool
+call safely. The Codex branch therefore maps every ask to deny. Mutation
+references remain useful for planning and review, but Codex must not execute
+those changes. Do not work around this limit with another CLI, SDK, wrapper,
+copied binary, infrastructure tool, or alternate credential path. IAM
+read-only roles, SCPs, and permission boundaries remain the real security
+boundary.
 
 Every AWS API call is an audit statement. CloudTrail records who you were, which
 role you used, where you came from, what you asked for, and the user agent that
@@ -42,6 +70,10 @@ classes (read-only, admin, frozen, personal), required tags, and the operator
 identity. Without it, operate with the conservative defaults in this skill.
 The policy contract is at the bottom of this file.
 
+In Codex the policy file is mandatory, must be an owner-only regular file
+(mode 600), and must classify at least one profile as readonly. Claude keeps
+the existing optional-policy behavior.
+
 ### 1. Identity gate
 
 Confirm who you are before the first call of a task:
@@ -55,6 +87,27 @@ an implicit profile or inherited environment credentials; name the profile
 explicitly on every command. Never trust a profile's _name_, profiles named
 "readonly" have been found carrying administrator roles; trust only the role
 that `get-caller-identity` returns.
+
+**Codex command shape.** Use the trusted CLI by its selected absolute path,
+an explicit readonly profile and region, endpoint isolation, non-interactive
+output, and an inline purpose stamp on every call:
+
+```sh
+AWS_SDK_UA_APP_ID="<operator-prefix>-<task-slug>" \\
+AWS_IGNORE_CONFIGURED_ENDPOINT_URLS=true \\
+/absolute/path/to/aws sts get-caller-identity \\
+  --profile <readonly-profile> --region <region> \\
+  --no-cli-pager --no-cli-auto-prompt
+```
+
+The gate selects a known absolute CLI path on macOS/Linux and reports it in
+the doctor. Operations marked paginated in the pinned inventory additionally
+require equal `--max-items` and `--page-size` values from 1 through 100.
+Interactive PTY commands are disabled in this lane because later input sent to
+an existing unified-exec session does not receive a second PreToolUse check.
+Active AWS CLI aliases, debug mode, interactive auto-prompt, and zero/unbounded
+timeouts are also denied. `s3 ls` and `logs tail` cannot express a reliable
+total-result bound; use bounded `s3api list-*` and `logs filter-log-events`.
 
 ### 2. Classify the operation
 
@@ -71,6 +124,10 @@ Every CLI operation falls in one class, and the class decides the lane:
 The orthogonal `sensitive` flag (credential material, trust or exposure
 boundary changes, spend commitments, workload disruption) forces explicit human
 confirmation regardless of class.
+
+In Codex, the table is still used for classification but only `read` with
+`sensitive=0` is executable. Every other cell is a planning-only lane and the
+hook returns deny; human confirmation does not override that runtime limit.
 
 Look the operation up in the full inventory (every operation of the installed
 CLI, classified):
@@ -120,8 +177,16 @@ page counts, name the exact resource. One line of stated purpose per block of
 related reads. Bursts of rapid-fire calls from a human identity read as
 compromised automation. Full patterns: `references/querying-and-logs.md`.
 
+For Codex, READ also requires a policy-classified readonly profile, explicit
+region, exact CLI path, endpoint isolation, `--no-cli-pager`, and inventory
+pagination bounds, plus `--no-cli-auto-prompt`. Sensitive reads remain blocked.
+
 **EXECUTE lane.** State what the invocation will cause and where its output
 lands before running it. Bounded inputs, verified outputs.
+
+The EXECUTE, CREATE/MODIFY, and DELETE paragraphs below are executable guidance
+for Claude Code. In Codex they are requirements for a proposed plan or review
+only; do not issue the command.
 
 **CREATE / MODIFY lane.** Follow the mutation ladder,
 `references/mutation-ladder.md`: read-only feasibility first, dry run or change
@@ -229,6 +294,9 @@ part of a shared copy of this skill:
     "team": "team-name",
     "owner": "corporate identity"
   },
+  "allowed_environment": {
+    "SSL_CERT_FILE": "/absolute/path/to/corporate-ca.pem"
+  },
   "notes": "free-form local rules"
 }
 ```
@@ -242,6 +310,12 @@ the hook only when they match a resolved profile _name_ (the gate cannot map a
 profile to an account ID without calling AWS); an account-ID entry is advisory
 — the doctor lints it, but a real account freeze must live in a deny SCP and in
 the credential lifecycle, never only here.
+
+In Codex, inherited CA and proxy settings are accepted only when their exact
+key/value appears in `allowed_environment`. Python, loader, credential,
+profile, region, endpoint, and other `AWS_*` overrides cannot be allowlisted.
+Claude ignores this Codex-only allowlist contract and preserves its legacy
+optional-policy behavior.
 
 ## Reference map
 
@@ -268,12 +342,14 @@ so read `references/threat-model.md` to know what it does not catch.
 
 ## Packaging and toggle
 
-This skill ships inside a togglable Claude Code plugin: the gate (a
-`PreToolUse` hook), this skill, and a `SessionStart` watchdog enable and
-disable as one unit. Disabling is a deliberate, total off -- there is no
-partial state -- and it changes nothing about the hard controls, which live
-where they belong: IAM, SCPs, permission boundaries, and read-only roles. The
-gate only lowers the odds of a careless keystroke; it never replaces them.
+This skill ships inside one dual-runtime plugin: the gate (a `PreToolUse`
+hook), this skill, and a `SessionStart` watchdog enable and disable as one
+unit. Claude Code keeps the upstream confirmation/mutation behavior; Codex
+selects the fail-closed read-only branch. Disabling is a deliberate, total off
+-- there is no partial state -- and it changes nothing about the hard controls,
+which live where they belong: IAM, SCPs, permission boundaries, and read-only
+roles. The gate only lowers the odds of a careless keystroke; it never replaces
+them.
 
 The **watchdog** (`scripts/aws-ops-doctor.py --quick`) runs once at session
 start and stays silent when the seatbelt is sound. It speaks only to warn --
@@ -293,3 +369,9 @@ binary (`/usr/bin/aws`) sidesteps it, so it complements the IAM- and SCP-level
 controls rather than standing in for them. The decision ledger rotates by size
 and age (`scripts/aws-ops-ledger.py rotate`), so a long-lived install keeps
 recent history without growing without bound.
+
+The manual installer and terminal shim are Claude/terminal compatibility
+tools; they must not be used to bypass the Codex plugin gate. Codex-specific
+regressions live in `scripts/test-codex-readonly.py`, and hook trust is reviewed
+through `/hooks` after every plugin update because trust is tied to the exact
+hook hash.

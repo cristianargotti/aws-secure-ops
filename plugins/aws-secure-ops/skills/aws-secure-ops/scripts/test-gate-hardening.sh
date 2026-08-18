@@ -128,6 +128,45 @@ run_case "aws help passes" \
 run_case "cloudformation change-set chain passes when stamped" \
   "AWS_SDK_UA_APP_ID=xx-deploy aws cloudformation create-change-set --stack-name s --change-set-name c --template-body file://t.yml --tags Key=team,Value=example-team --profile acct-admin && AWS_SDK_UA_APP_ID=xx-deploy aws cloudformation wait change-set-create-complete --stack-name s --change-set-name c --profile acct-admin" allow
 
+# AWS CLI uses argparse long-option abbreviations. The gate must canonicalize
+# unique global prefixes exactly as the CLI does, including flags before the
+# service, while preserving ambiguous prefixes as invalid/no-op gate input.
+run_case "abbreviated TLS bypass is denied" \
+  "aws s3 ls --no-v" deny "TLS"
+
+run_case "abbreviated external endpoint asks" \
+  "aws s3api list-buckets --endpoint-u https://mirror.example.net --p acct-read" ask "endpoint"
+
+run_case "inline abbreviated external endpoint asks" \
+  "aws --e=https://mirror.example.net s3api list-buckets --p=acct-read" ask "endpoint"
+
+run_case "abbreviated localhost endpoint preserves allow" \
+  "aws s3api list-buckets --e http://localhost:4566 --p acct-read" allow
+
+run_case "abbreviated frozen profile still denies mutation" \
+  "AWS_SDK_UA_APP_ID=xx-x aws ec2 create-tags --resources i-1 --tags Key=a,Value=b --p legacy-frozen" deny "FROZEN"
+
+run_case "abbreviated CA and globals before service parse correctly" \
+  "aws --ca /tmp/corp-ca.pem --r us-east-1 --o json sts get-caller-identity --p acct-read" allow
+
+run_case "CLI error format before service parses correctly" \
+  "aws --cli-error-format json sts get-caller-identity --profile acct-read" allow
+
+run_case "ambiguous global abbreviation is not misclassified as TLS" \
+  "aws s3 ls --no" allow
+
+run_case "abbreviated s3 sync delete escalates to ask" \
+  "AWS_SDK_UA_APP_ID=xx-publish aws s3 sync ./dist s3://bucket/app --del --profile acct-admin" ask "Destructive"
+
+run_case "SSO logout is a disruptive local mutation" \
+  "AWS_SDK_UA_APP_ID=xx-logout aws sso logout --profile acct-admin" ask "Destructive"
+
+run_case "logs tail follow is denied as unbounded" \
+  "aws logs tail /aws/example --follow --profile acct-read" deny "Unbounded"
+
+run_case "abbreviated logs tail follow is denied" \
+  "aws logs tail /aws/example --fol --profile acct-read" deny "Unbounded"
+
 # ---------------------------------------------------------------------------
 # Hole 1 — cross-segment AWS_PROFILE tracking
 # ---------------------------------------------------------------------------

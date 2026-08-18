@@ -16,9 +16,11 @@ jobs:
       fail-fast: false
       matrix:
         os: [ubuntu-latest, macos-latest]
-        python: ["3.9", "3.11", "3.13"]
+        python: ["3.8", "3.9", "3.11", "3.13"]
         exclude:
           # macOS runners are slow/costly: cover one Python there, all on Linux.
+          - os: macos-latest
+            python: "3.8"
           - os: macos-latest
             python: "3.9"
           - os: macos-latest
@@ -33,7 +35,19 @@ jobs:
           python-version: ${{ matrix.python }}
 
       - name: Compile every script
-        run: python -m py_compile *.py
+        run: python -m py_compile ./*.py
+
+      - name: Validate plugin JSON packaging
+        working-directory: .
+        run: |
+          python -m json.tool .claude-plugin/marketplace.json >/dev/null
+          python -m json.tool .agents/plugins/marketplace.json >/dev/null
+          python -m json.tool plugins/aws-secure-ops/.claude-plugin/plugin.json >/dev/null
+          python -m json.tool plugins/aws-secure-ops/.codex-plugin/plugin.json >/dev/null
+          python -m json.tool plugins/aws-secure-ops/hooks/hooks.json >/dev/null
+
+      - name: Validate dual-runtime packaging contract
+        run: python test-plugin-packaging.py
 
       - name: Decision corpus
         run: python run-corpus.py
@@ -55,6 +69,34 @@ jobs:
 
       - name: Hook launcher suite
         run: bash test-run-gate.sh
+
+      - name: Shared hook runtime dispatcher
+        run: python test-hook-dispatch.py
+
+      - name: Codex fail-closed read-only suite
+        run: python test-codex-readonly.py
+
+      - name: Doctor policy contract (offline)
+        run: python test-doctor-policy.py
+
+      - name: Codex packaged doctor (offline)
+        working-directory: .
+        run: |
+          unset SSL_CERT_FILE SSL_CERT_DIR REQUESTS_CA_BUNDLE CURL_CA_BUNDLE
+          unset HTTPS_PROXY HTTP_PROXY ALL_PROXY NO_PROXY
+          unset https_proxy http_proxy all_proxy no_proxy SSLKEYLOGFILE
+          unset PYTHONHOME PYTHONPATH PYTHONINSPECT PYTHONSTARTUP PYTHONUSERBASE
+          policy_file="$(mktemp)"
+          trap 'rm -f "$policy_file"' EXIT
+          printf '%s\n' '{"operator":{"name":"ci","stamp_prefix":"xx"},"profiles":{"ci-read":"readonly"},"required_tags":{},"ledger":false}' >"$policy_file"
+          chmod 600 "$policy_file"
+          AWS_OPS_HOOK_RUNTIME=codex \
+          AWS_OPS_MODE=readonly \
+          AWS_OPS_TRUSTED_AWS_CLI=/usr/bin/true \
+          AWS_OPS_POLICY_FILE="$policy_file" \
+          AWS_OPS_LEDGER_FILE=/dev/null \
+          PLUGIN_ROOT="$GITHUB_WORKSPACE/plugins/aws-secure-ops" \
+          python plugins/aws-secure-ops/skills/aws-secure-ops/scripts/aws-ops-doctor.py --quick
 
       - name: Installer suite
         run: bash test-install.sh

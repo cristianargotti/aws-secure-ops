@@ -38,6 +38,52 @@ emits a deny or a request for human confirmation through the harness's
 permission protocol, or it exits silently and the normal permission system
 proceeds as if the gate did not exist. It never auto-approves anything.
 
+## Codex read-only overlay
+
+The generic sections below describe the original Claude behavior. When the
+hook sets `AWS_OPS_HOOK_RUNTIME=codex` and `AWS_OPS_MODE=readonly`, stricter
+rules replace every permissive degradation:
+
+- every `ask` result becomes `deny`, because Codex currently continues rather
+  than safely pausing an ask hook result;
+- malformed hook JSON, invalid/missing/wrong-type policy, missing inventory,
+  classifier crashes, and malformed classifier output fail closed;
+- only known, non-sensitive `read` operations are executable;
+- every call requires the selected exact CLI path, a policy-classified
+  readonly profile, explicit region, purpose stamp, endpoint isolation, and
+  exact `--no-cli-pager` and `--no-cli-auto-prompt` output controls;
+- paginated calls require equal `--max-items` and `--page-size` values from 1
+  through 100;
+- credential/config/TLS context changes, custom endpoints, wrappers, dynamic
+  command names, loops, shell functions, interactive PTYs, prefix redirections,
+  copied or symlinked obvious CLI paths, active AWS CLI aliases, debug output,
+  and unbounded/zero CLI timeouts are denied;
+- high-level `s3 ls` and `logs tail` are denied because they cannot guarantee a
+  total bound; bounded `s3api list-*` and `logs filter-log-events` are the Codex
+  alternatives.
+
+Codex rejects inherited CA and proxy overrides unless their exact key/value is
+declared in the private policy's `allowed_environment` map. Python, loader,
+credential, profile, region, endpoint, and other `AWS_*` overrides cannot be
+allowlisted. The standard unified-exec PTY path is denied because `write_stdin`
+transports later input without a second PreToolUse event; specialized tool paths
+can still opt out of hook coverage and remain part of the residual boundary.
+
+Plain text containing the word `aws` is discovered lexically before private
+policy or inherited-environment checks, so documentation searches and printing
+remain outside the gate. The supervisor is still a user-space seatbelt: code
+generation, SDKs, Terraform/CDK, renamed binary copies, another terminal, or a
+deliberately novel wrapper can bypass string inspection. Therefore every
+credential available to Codex must itself be truly read-only. Mutations require
+a separate plan, human-approval, one-shot broker design; they are not enabled by
+changing the hook back to ask.
+
+Codex also requires explicit hook trust. Plugin installation alone leaves hooks
+untrusted, and trust is tied to the exact hook-definition hash. Review the two
+plugin hooks through `/hooks` after each update. On an unmanaged workstation a
+user can disable a plugin or hook, so this remains defense in depth rather than
+an organizational enforcement boundary.
+
 ## What the gate catches
 
 The following is enumerated from the code, not from intent. Classification
@@ -209,6 +255,10 @@ it happens; a lying exit code is caught by the read-back. The design
 assumption is that each layer will fail eventually, alone.
 
 ## Failure modes of the gate itself
+
+The fallback behavior in this section is the Claude/legacy lane. The Codex
+overlay above intentionally overrides malformed input, missing policy,
+missing inventory, and launcher failure with fail-closed deny/warning output.
 
 - **Unparseable hook input, or a non-shell tool.** The gate exits silently
   with no opinion, and the harness's normal permission system proceeds

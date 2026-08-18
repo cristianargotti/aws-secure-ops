@@ -63,6 +63,13 @@
     "reason": "reviewed"
   },
   {
+    "service": "amplify",
+    "operation": "get-artifact-url",
+    "class": "read",
+    "sensitive": 1,
+    "reason": "reviewed"
+  },
+  {
     "service": "amplifybackend",
     "operation": "create-token",
     "class": "create",
@@ -255,6 +262,20 @@
     "service": "athena",
     "operation": "create-presigned-notebook-url",
     "class": "create",
+    "sensitive": 1,
+    "reason": "reviewed"
+  },
+  {
+    "service": "auditmanager",
+    "operation": "get-assessment-report-url",
+    "class": "read",
+    "sensitive": 1,
+    "reason": "reviewed"
+  },
+  {
+    "service": "auditmanager",
+    "operation": "get-evidence-file-upload-url",
+    "class": "read",
     "sensitive": 1,
     "reason": "reviewed"
   },
@@ -1142,6 +1163,13 @@
   },
   {
     "service": "customer-profiles",
+    "operation": "get-upload-job-path",
+    "class": "read",
+    "sensitive": 1,
+    "reason": "reviewed"
+  },
+  {
+    "service": "customer-profiles",
     "operation": "stop-recommender",
     "class": "destroy",
     "sensitive": 1,
@@ -1233,9 +1261,23 @@
   },
   {
     "service": "devicefarm",
+    "operation": "get-upload",
+    "class": "read",
+    "sensitive": 1,
+    "reason": "reviewed"
+  },
+  {
+    "service": "devicefarm",
     "operation": "install-to-remote-access-session",
     "class": "execute",
     "sensitive": 0,
+    "reason": "reviewed"
+  },
+  {
+    "service": "devicefarm",
+    "operation": "list-uploads",
+    "class": "read",
+    "sensitive": 1,
     "reason": "reviewed"
   },
   {
@@ -1502,6 +1544,13 @@
     "operation": "deregister-instance-event-notification-attributes",
     "class": "modify",
     "sensitive": 0,
+    "reason": "reviewed"
+  },
+  {
+    "service": "ec2",
+    "operation": "describe-ipam-external-resource-verification-tokens",
+    "class": "read",
+    "sensitive": 1,
     "reason": "reviewed"
   },
   {
@@ -2087,6 +2136,13 @@
   },
   {
     "service": "gamelift",
+    "operation": "get-game-session-log-url",
+    "class": "read",
+    "sensitive": 1,
+    "reason": "reviewed"
+  },
+  {
+    "service": "gamelift",
     "operation": "get-instance-access",
     "class": "read",
     "sensitive": 1,
@@ -2215,6 +2271,13 @@
     "service": "grafana",
     "operation": "update-workspace-authentication",
     "class": "modify",
+    "sensitive": 1,
+    "reason": "reviewed"
+  },
+  {
+    "service": "groundstation",
+    "operation": "get-agent-task-response-url",
+    "class": "read",
     "sensitive": 1,
     "reason": "reviewed"
   },
@@ -2850,6 +2913,34 @@
   },
   {
     "service": "lambda",
+    "operation": "get-function",
+    "class": "read",
+    "sensitive": 1,
+    "reason": "reviewed"
+  },
+  {
+    "service": "lambda",
+    "operation": "get-function-configuration",
+    "class": "read",
+    "sensitive": 1,
+    "reason": "reviewed"
+  },
+  {
+    "service": "lambda",
+    "operation": "get-layer-version",
+    "class": "read",
+    "sensitive": 1,
+    "reason": "reviewed"
+  },
+  {
+    "service": "lambda",
+    "operation": "get-layer-version-by-arn",
+    "class": "read",
+    "sensitive": 1,
+    "reason": "reviewed"
+  },
+  {
+    "service": "lambda",
     "operation": "update-function-url-config",
     "class": "modify",
     "sensitive": 1,
@@ -3055,6 +3146,13 @@
     "service": "logs",
     "operation": "put-destination-policy",
     "class": "modify",
+    "sensitive": 1,
+    "reason": "reviewed"
+  },
+  {
+    "service": "m2",
+    "operation": "get-signed-bluinsights-url",
+    "class": "read",
     "sensitive": 1,
     "reason": "reviewed"
   },
@@ -3384,6 +3482,13 @@
     "service": "mturk",
     "operation": "create-hit-with-hit-type",
     "class": "create",
+    "sensitive": 1,
+    "reason": "reviewed"
+  },
+  {
+    "service": "mturk",
+    "operation": "get-file-upload-url",
+    "class": "read",
     "sensitive": 1,
     "reason": "reviewed"
   },
@@ -4634,6 +4739,13 @@
     "reason": "reviewed"
   },
   {
+    "service": "secretsmanager",
+    "operation": "get-random-password",
+    "class": "read",
+    "sensitive": 1,
+    "reason": "reviewed"
+  },
+  {
     "service": "security-ir",
     "operation": "close-case",
     "class": "modify",
@@ -4644,6 +4756,20 @@
     "service": "security-ir",
     "operation": "create-membership",
     "class": "create",
+    "sensitive": 1,
+    "reason": "reviewed"
+  },
+  {
+    "service": "security-ir",
+    "operation": "get-case-attachment-download-url",
+    "class": "read",
+    "sensitive": 1,
+    "reason": "reviewed"
+  },
+  {
+    "service": "security-ir",
+    "operation": "get-case-attachment-upload-url",
+    "class": "read",
     "sensitive": 1,
     "reason": "reviewed"
   },
@@ -5251,6 +5377,13 @@
   },
   {
     "service": "waf",
+    "operation": "get-change-token",
+    "class": "read",
+    "sensitive": 1,
+    "reason": "reviewed"
+  },
+  {
+    "service": "waf",
     "operation": "put-permission-policy",
     "class": "modify",
     "sensitive": 1,
@@ -5265,8 +5398,22 @@
   },
   {
     "service": "waf-regional",
+    "operation": "get-change-token",
+    "class": "read",
+    "sensitive": 1,
+    "reason": "reviewed"
+  },
+  {
+    "service": "waf-regional",
     "operation": "put-permission-policy",
     "class": "modify",
+    "sensitive": 1,
+    "reason": "reviewed"
+  },
+  {
+    "service": "wafv2",
+    "operation": "get-decrypted-api-key",
+    "class": "read",
     "sensitive": 1,
     "reason": "reviewed"
   },

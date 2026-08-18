@@ -2,13 +2,13 @@
   "hooks": {
     "PreToolUse": [
       {
-        "matcher": "Bash",
+        "matcher": "^Bash$",
         "hooks": [
           {
             "type": "command",
-            "command": "sh \"${CLAUDE_PLUGIN_ROOT}/skills/aws-secure-ops/scripts/run-gate.sh\" \"${CLAUDE_PLUGIN_ROOT}/skills/aws-secure-ops/scripts/classify-aws-command.py\"",
+            "command": "if /bin/test -n \"${PLUGIN_ROOT:-}\" && /bin/test -f \"${PLUGIN_ROOT}/.codex-plugin/plugin.json\"; then if /bin/test -f \"${PLUGIN_ROOT}/skills/aws-secure-ops/scripts/run-gate.sh\" && /bin/test -f \"${PLUGIN_ROOT}/skills/aws-secure-ops/scripts/classify-aws-command.py\"; then AWS_OPS_HOOK_RUNTIME=codex AWS_OPS_MODE=readonly AWS_OPS_POLICY_FILE=\"$HOME/.claude/aws-ops.policy.json\" AWS_OPS_LEDGER_FILE=\"$HOME/.codex/aws-secure-ops-ledger.jsonl\" /bin/sh -p \"${PLUGIN_ROOT}/skills/aws-secure-ops/scripts/run-gate.sh\" --codex-pretool \"${PLUGIN_ROOT}/skills/aws-secure-ops/scripts/classify-aws-command.py\"; else /usr/bin/printf '%s\\n' '{\"hookSpecificOutput\":{\"hookEventName\":\"PreToolUse\",\"permissionDecision\":\"deny\",\"permissionDecisionReason\":\"Blocked fail-closed: the Codex aws-secure-ops package is incomplete.\"}}'; fi; elif /bin/test -n \"${CLAUDE_PLUGIN_ROOT:-}\" && /bin/test -f \"${CLAUDE_PLUGIN_ROOT}/.claude-plugin/plugin.json\"; then if /bin/test -f \"${CLAUDE_PLUGIN_ROOT}/skills/aws-secure-ops/scripts/run-gate.sh\" && /bin/test -f \"${CLAUDE_PLUGIN_ROOT}/skills/aws-secure-ops/scripts/classify-aws-command.py\"; then /bin/sh -p \"${CLAUDE_PLUGIN_ROOT}/skills/aws-secure-ops/scripts/run-gate.sh\" \"${CLAUDE_PLUGIN_ROOT}/skills/aws-secure-ops/scripts/classify-aws-command.py\"; else /usr/bin/printf '%s\\n' 'aws-secure-ops: incomplete Claude plugin package' >&2; exit 2; fi; else /usr/bin/printf '%s\\n' '{\"hookSpecificOutput\":{\"hookEventName\":\"PreToolUse\",\"permissionDecision\":\"deny\",\"permissionDecisionReason\":\"Blocked fail-closed: aws-secure-ops could not resolve a valid plugin root.\"}}'; fi",
             "timeout": 15,
-            "statusMessage": "aws-secure-ops gate"
+            "statusMessage": "aws-secure-ops runtime gate"
           }
         ]
       }
@@ -18,9 +18,9 @@
         "hooks": [
           {
             "type": "command",
-            "command": "sh \"${CLAUDE_PLUGIN_ROOT}/skills/aws-secure-ops/scripts/run-gate.sh\" \"${CLAUDE_PLUGIN_ROOT}/skills/aws-secure-ops/scripts/aws-ops-doctor.py\" --quick --session",
+            "command": "if /bin/test -n \"${PLUGIN_ROOT:-}\" && /bin/test -f \"${PLUGIN_ROOT}/.codex-plugin/plugin.json\"; then if /bin/test -f \"${PLUGIN_ROOT}/skills/aws-secure-ops/scripts/run-gate.sh\" && /bin/test -f \"${PLUGIN_ROOT}/skills/aws-secure-ops/scripts/aws-ops-doctor.py\"; then AWS_OPS_HOOK_RUNTIME=codex AWS_OPS_MODE=readonly AWS_OPS_POLICY_FILE=\"$HOME/.claude/aws-ops.policy.json\" AWS_OPS_LEDGER_FILE=\"$HOME/.codex/aws-secure-ops-ledger.jsonl\" /bin/sh -p \"${PLUGIN_ROOT}/skills/aws-secure-ops/scripts/run-gate.sh\" --codex-session \"${PLUGIN_ROOT}/skills/aws-secure-ops/scripts/aws-ops-doctor.py\" --quick --session; else /usr/bin/printf '%s\\n' '{\"systemMessage\":\"aws-secure-ops is unavailable: the Codex plugin package is incomplete. AWS operations must remain blocked until the plugin is repaired.\"}'; fi; elif /bin/test -n \"${CLAUDE_PLUGIN_ROOT:-}\" && /bin/test -f \"${CLAUDE_PLUGIN_ROOT}/.claude-plugin/plugin.json\"; then if /bin/test -f \"${CLAUDE_PLUGIN_ROOT}/skills/aws-secure-ops/scripts/run-gate.sh\" && /bin/test -f \"${CLAUDE_PLUGIN_ROOT}/skills/aws-secure-ops/scripts/aws-ops-doctor.py\"; then /bin/sh -p \"${CLAUDE_PLUGIN_ROOT}/skills/aws-secure-ops/scripts/run-gate.sh\" \"${CLAUDE_PLUGIN_ROOT}/skills/aws-secure-ops/scripts/aws-ops-doctor.py\" --quick --session; else /usr/bin/printf '%s\\n' 'aws-secure-ops: incomplete Claude plugin package' >&2; exit 2; fi; else /usr/bin/printf '%s\\n' '{\"systemMessage\":\"aws-secure-ops is unavailable: no valid plugin root was resolved. AWS operations must remain blocked until the plugin is repaired.\"}'; fi",
             "timeout": 15,
-            "statusMessage": "aws-secure-ops watchdog"
+            "statusMessage": "aws-secure-ops runtime watchdog"
           }
         ]
       }

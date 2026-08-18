@@ -11,7 +11,8 @@ GATE="$DIR/classify-aws-command.py"
 POLICY="$(mktemp)"
 LEDGER="$(mktemp)"
 BIN="$(mktemp -d)"
-trap 'rm -f "$POLICY" "$LEDGER" "$BIN"/cat "$BIN"/grep; rmdir "$BIN" 2>/dev/null || true' EXIT
+TMP="$(mktemp -d)"
+trap 'rm -f "$POLICY" "$LEDGER" "$BIN"/cat "$BIN"/grep "$TMP"/*; rmdir "$BIN" "$TMP" 2>/dev/null || true' EXIT
 printf '{}' >"$POLICY"
 export AWS_OPS_POLICY_FILE="$POLICY" AWS_OPS_LEDGER_FILE="$LEDGER"
 
@@ -35,7 +36,56 @@ w=$(printf '%s' "$MUT" | sh "$WRAP" "$GATE" | tr -d '[:space:]')
 d=$(printf '%s' "$MUT" | python3 "$GATE" | tr -d '[:space:]')
 check "happy path: wrapper decision == direct gate" "$w" "$d"
 
-# 2. No-interpreter fallback: build a PATH with cat/grep but no python*.
+# 2. Codex supervisor: crashes and malformed output become valid deny/warning
+# payloads instead of failed hooks that Codex would continue past.
+if [ -x /usr/bin/python3 ]; then
+  c=$(printf '%s' "$MUT" |
+    AWS_OPS_HOOK_RUNTIME=codex AWS_OPS_MODE=readonly AWS_OPS_TRUSTED_AWS_CLI=/safe/aws sh "$WRAP" --codex-pretool "$GATE" |
+    tr -d '[:space:]' |
+    grep -o '"permissionDecision":"deny"' || true)
+  check "Codex pretool: classifier deny is preserved" "$c" '"permissionDecision":"deny"'
+
+  n=$(printf '%s' "$NONAWS" |
+    AWS_OPS_HOOK_RUNTIME=codex AWS_OPS_MODE=readonly AWS_OPS_TRUSTED_AWS_CLI=/safe/aws sh "$WRAP" --codex-pretool "$GATE" |
+    wc -c | tr -d ' ')
+  check "Codex pretool: healthy silent allow stays silent" "$n" "0"
+
+  printf '%s\n' 'raise SystemExit(7)' >"$TMP/crash.py"
+  printf '%s\n' 'print("not-json")' >"$TMP/malformed.py"
+  printf '%s\n' 'import os; print("{\"hookSpecificOutput\":{\"hookEventName\":\"PreToolUse\",\"permissionDecision\":\"deny\",\"permissionDecisionReason\":\"inherited trust override\"}}") if os.environ.get("AWS_OPS_TRUSTED_AWS_CLI") else None' >"$TMP/check-trust-env.py"
+  printf '%s\n' 'import os; bad=os.environ.get("PYTHONPATH") or "PYTHONPATH" not in os.environ.get("AWS_OPS_UNSAFE_LAUNCH_ENV", "").split(","); print("{\"hookSpecificOutput\":{\"hookEventName\":\"PreToolUse\",\"permissionDecision\":\"deny\",\"permissionDecisionReason\":\"launcher environment was not sanitized\"}}") if bad else None' >"$TMP/check-python-env.py"
+  crash=$(printf '%s' "$NONAWS" |
+    sh "$WRAP" --codex-pretool "$TMP/crash.py" |
+    grep -o '"permissionDecision":"deny"' || true)
+  check "Codex pretool: classifier crash fails closed" "$crash" '"permissionDecision":"deny"'
+  malformed=$(printf '%s' "$NONAWS" |
+    sh "$WRAP" --codex-pretool "$TMP/malformed.py" |
+    grep -o '"permissionDecision":"deny"' || true)
+  check "Codex pretool: malformed classifier output fails closed" "$malformed" '"permissionDecision":"deny"'
+  trust_override=$(printf '%s' "$NONAWS" |
+    AWS_OPS_TRUSTED_AWS_CLI=/tmp/evil sh "$WRAP" --codex-pretool "$TMP/check-trust-env.py" |
+    wc -c | tr -d ' ')
+  check "Codex pretool: inherited trusted CLI override is cleared" "$trust_override" "0"
+  python_override=$(printf '%s' "$NONAWS" |
+    PYTHONPATH=/tmp/attacker-python sh "$WRAP" --codex-pretool "$TMP/check-python-env.py" |
+    wc -c | tr -d ' ')
+  check "Codex pretool: Python injection is cleared and recorded" "$python_override" "0"
+  shell_function_poison=$(printf '%s' "$NONAWS" |
+    /usr/bin/env 'BASH_FUNC_printf%%=() { :; }' \
+      AWS_OPS_HOOK_RUNTIME=codex AWS_OPS_MODE=readonly \
+      /bin/sh -p "$WRAP" --codex-pretool "$TMP/crash.py" |
+    grep -o '"permissionDecision":"deny"' || true)
+  check "Codex pretool: exported shell functions cannot suppress fail-closed JSON" \
+    "$shell_function_poison" '"permissionDecision":"deny"'
+  session=$(printf '%s' '{}' |
+    sh "$WRAP" --codex-session "$TMP/crash.py" |
+    grep -o '"systemMessage"' || true)
+  check "Codex session: doctor crash emits warning" "$session" '"systemMessage"'
+else
+  echo "SKIP  Codex supervisor tests (/usr/bin/python3 is unavailable)"
+fi
+
+# 3. No-interpreter fallback: build a PATH with cat/grep but no python*.
 for t in cat grep; do
   rp=$(command -v "$t" 2>/dev/null || true)
   [ -x "$rp" ] && ln -s "$rp" "$BIN/$t"

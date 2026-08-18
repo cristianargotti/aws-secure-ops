@@ -32,6 +32,8 @@ machine.
 
 - Path: the value of `AWS_OPS_LEDGER_FILE` if set, otherwise
   `~/.claude/aws-ops-ledger.jsonl`.
+- The packaged Codex hook sets that value to
+  `~/.codex/aws-secure-ops-ledger.jsonl`; Claude keeps the default above.
 - Format: JSON Lines -- one self-contained JSON object per line, appended in
   decision order.
 
@@ -77,6 +79,9 @@ denials are decided before any invocation is classified (for example
 `--no-verify-ssl`); these block the command without writing a per-invocation
 line.
 
+That `ask` interpretation applies to Claude. In Codex every ask-class result is
+recorded and emitted as `deny`, because the runtime does not safely pause it.
+
 ## Privacy guarantees
 
 The ledger records **metadata only**. By contract it never contains:
@@ -96,6 +101,10 @@ Ledger writing is also **best-effort by design**: a full disk, a bad path, or
 a permission problem never blocks, delays, or changes a gate decision. The
 gate proceeds silently. The practical consequence for the operator: an absent
 ledger line is weak evidence, while CloudTrail remains strong evidence.
+
+The writer creates regular ledgers mode 600, refuses symlinks/non-regular
+files/wrong owners/hard-linked targets, and never chmods or appends through a
+symlink. A rejected ledger target does not change the gate decision.
 
 ## Disabling the ledger
 
